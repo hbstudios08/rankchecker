@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Rank Checker</title>
+<style>
+:root {
+  --bg:#f7f6fa; --card:#fff; --fg:#1c1b22; --muted:#6c6a78; --line:#e5e3ee;
+  --accent:#6a1b9a; --accent-2:#c62828; --on-accent:#fff;
+  --good:#1a7f37; --warn:#9a6700; --bad:#c62828;
+  --top-bg:rgba(26,127,55,.2); --good-bg:rgba(26,127,55,.12); --mid-bg:rgba(154,103,0,.14); --low-bg:rgba(108,106,120,.12);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:#0f0e14; --card:#17161e; --fg:#ecebf2; --muted:#9b99a8; --line:#2a2833;
+    --accent:#c792ea; --accent-2:#ff7b7b; --on-accent:#14111a;
+    --good:#4cc26a; --warn:#e3b341; --bad:#ff7b7b;
+    --top-bg:rgba(76,194,106,.22); --good-bg:rgba(76,194,106,.12); --mid-bg:rgba(227,179,65,.14); --low-bg:rgba(155,153,168,.12);
+  }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+.wrap { max-width:1000px; margin:0 auto; padding:0 20px; }
+.top { padding:28px 0 20px; background:linear-gradient(135deg,var(--accent-2),var(--accent)); color:#fff; }
+.top h1 { margin:0 0 2px; font-size:24px; }
+.top p { margin:0; opacity:.9; }
+main { padding:20px 20px 80px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:16px; }
+.card h2 { font-size:16px; margin:0 0 12px; }
+.card h2 span { color:var(--accent); margin-right:6px; }
+label, .lbl { display:block; font-size:13px; color:var(--muted); margin:0 0 4px; }
+input[type=search], input[type=text], input[type=password], select {
+  width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:8px;
+  background:var(--bg); color:var(--fg); font:inherit;
+}
+input:focus-visible, select:focus-visible, button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.row { display:flex; gap:12px; flex-wrap:wrap; }
+.row > * { flex:1 1 220px; }
+.toggle { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border:1px solid var(--line); border-radius:999px; cursor:pointer; margin:0 8px 8px 0; color:var(--fg); font-size:14px; }
+.toggle:has(input:checked) { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 12%,transparent); }
+.appbox { margin-top:10px; position:relative; }
+.suggest { margin-top:6px; display:grid; gap:4px; }
+.opt { display:flex; align-items:center; gap:10px; text-align:left; width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--fg); font:inherit; cursor:pointer; }
+.opt:hover { border-color:var(--accent); }
+.opt img, .selected img, .ph { width:36px; height:36px; border-radius:8px; flex:none; background:var(--line); }
+.opt small, .selected small { display:block; color:var(--muted); font-size:12px; }
+.selected { display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--accent); border-radius:8px; }
+.selected > div { flex:1; min-width:0; }
+.selected strong, .opt strong { font-weight:600; }
+button.link { background:none; border:0; color:var(--accent); cursor:pointer; font:inherit; padding:4px 8px; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+.chip { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border:1px solid var(--line); border-radius:999px; background:var(--bg); color:var(--fg); font:inherit; font-size:13px; cursor:pointer; }
+.chip small { color:var(--muted); font-size:11px; }
+.chip.on { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 14%,transparent); }
+.chip .x { color:var(--muted); }
+.hint { color:var(--muted); font-size:13px; margin:6px 0 0; }
+.presets { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; align-items:center; }
+.grid { display:flex; flex-wrap:wrap; gap:6px; max-height:190px; overflow:auto; padding:2px; }
+.btn { padding:10px 20px; border:0; border-radius:8px; background:var(--accent); color:var(--on-accent); font:inherit; font-weight:600; cursor:pointer; }
+.btn.secondary { background:transparent; color:var(--fg); border:1px solid var(--line); font-weight:500; }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.runbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:6px; }
+.runbar progress { flex:1 1 180px; height:8px; accent-color:var(--accent); }
+.status { min-height:22px; color:var(--muted); font-size:14px; }
+.status.err { color:var(--bad); }
+details summary { cursor:pointer; font-weight:600; }
+details .row { margin-top:12px; }
+.res-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:8px; }
+.res-head h2 { margin:0; }
+.sum { color:var(--muted); font-size:13px; }
+.scroll { overflow-x:auto; }
+table { border-collapse:separate; border-spacing:0; width:100%; font-size:14px; }
+th, td { padding:4px; text-align:center; white-space:nowrap; }
+th { color:var(--muted); font-weight:500; font-size:12px; }
+th:first-child, td:first-child { text-align:left; position:sticky; left:0; background:var(--card); padding-right:12px; z-index:1; max-width:220px; overflow:hidden; text-overflow:ellipsis; }
+button.cell { width:100%; min-width:52px; padding:6px 4px; border:1px solid transparent; border-radius:8px; font:inherit; font-weight:600; cursor:pointer; background:var(--low-bg); color:var(--fg); line-height:1.2; }
+button.cell:hover { border-color:var(--accent); }
+button.cell small { display:block; font-size:10px; font-weight:600; }
+.r-top { background:var(--top-bg); color:var(--good); }
+.r-good { background:var(--good-bg); color:var(--good); }
+.r-mid { background:var(--mid-bg); color:var(--warn); }
+.r-low { background:var(--low-bg); }
+.r-none, .r-wait { background:transparent; color:var(--muted); font-weight:400; }
+.r-err { background:transparent; color:var(--bad); }
+.d.up { color:var(--good); } .d.down { color:var(--bad); }
+#detail h3 { margin:0 0 4px; font-size:15px; }
+#detail ol { margin:8px 0 0; padding-left:22px; }
+#detail li { padding:3px 0; } #detail li.me { font-weight:700; color:var(--accent); }
+#detail small { color:var(--muted); }
+[hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <h1>Rank Checker</h1>
+  <p>See where your app ranks for any keyword, on either store, in any country.</p>
+</div></header>
+
+<main class="wrap">
+  <section class="card" id="auth" hidden>
+    <h2>Access key</h2>
+    <div class="row">
+      <div><label for="key">Access key for your Google Play proxy / server</label><input type="password" id="key" autocomplete="off"></div>
+      <div style="align-self:end"><button class="btn" id="key-save" type="button">Save</button></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span>1</span>Stores and app</h2>
+    <div role="group" aria-label="Stores">
+      <label class="toggle"><input type="checkbox" id="st-ios" checked> App Store</label>
+      <label class="toggle"><input type="checkbox" id="st-android" checked> Google Play</label>
+    </div>
+    <p class="hint" id="play-hint" hidden>Google Play lookups need a small proxy when this page is hosted on GitHub Pages. Add its URL under Advanced, or untick Google Play. App Store checks work without it.</p>
+
+    <div class="appbox" id="app-ios">
+      <div class="field">
+        <label for="q-ios">App Store app</label>
+        <input type="search" id="q-ios" placeholder="Search by name, or paste the numeric Apple ID" autocomplete="off">
+      </div>
+      <div class="suggest" aria-live="polite"></div>
+      <div class="selected" hidden></div>
+    </div>
+
+    <div class="appbox" id="app-android">
+      <div class="field">
+        <label for="q-android">Google Play app</label>
+        <input type="search" id="q-android" placeholder="Search by name, or paste the package name (com.studio.app)" autocomplete="off">
+      </div>
+      <div class="suggest" aria-live="polite"></div>
+      <div class="selected" hidden></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span>2</span>Keywords</h2>
+    <div class="chips" id="kw-chips"></div>
+    <label for="kw-input" class="lbl">Add keywords</label>
+    <input type="text" id="kw-input" placeholder="Type a keyword and press Enter (or paste a list)" autocomplete="off">
+    <p class="hint">Up to 50 keywords. Pasting a list separated by commas or new lines adds them all.</p>
+  </section>
+
+  <section class="card">
+    <h2><span>3</span>Countries <small id="c-count" style="color:var(--muted);font-weight:400"></small></h2>
+    <div class="presets">
+      <button type="button" class="chip" data-preset="desi">South Asia, Gulf and diaspora</button>
+      <button type="button" class="chip" data-preset="english">English-speaking</button>
+      <button type="button" class="chip" data-preset="clear">Clear</button>
+    </div>
+    <input type="search" id="c-filter" placeholder="Filter countries" aria-label="Filter countries" autocomplete="off">
+    <div class="grid" id="c-grid" style="margin-top:8px"></div>
+  </section>
+
+  <details class="card">
+    <summary>Advanced</summary>
+    <div class="row">
+      <div><label for="depth-ios">App Store search depth</label>
+        <select id="depth-ios"><option>50</option><option>100</option><option selected>200</option></select></div>
+      <div><label for="depth-android">Google Play search depth</label>
+        <select id="depth-android"><option>30</option><option selected>50</option><option>100</option></select></div>
+    </div>
+    <p class="hint">Depth is how many results are scanned. Google Play only returns its first page (about 20 to 30 apps), whatever the depth.</p>
+    <div style="margin-top:12px">
+      <label for="proxy">Google Play proxy URL (needed on GitHub Pages, ignored when served by server.py)</label>
+      <input type="text" id="proxy" placeholder="https://super-voice-a15e.hbstudios08.workers.dev/" autocomplete="off">
+    </div>
+  </details>
+
+  <div class="runbar">
+    <button class="btn" id="run" type="button">Check ranks</button>
+    <button class="btn secondary" id="stop" type="button" hidden>Stop</button>
+    <button class="btn secondary" id="export" type="button" hidden>Export CSV</button>
+    <progress id="bar" max="100" value="0" hidden></progress>
+  </div>
+  <div class="status" id="status" role="status" aria-live="polite"></div>
+
+  <div id="results"></div>
+  <section class="card" id="detail" aria-live="polite" hidden></section>
+</main>
+
+<script>
+(() => {
+const COUNTRIES = [
+  ['pk','Pakistan'],['in','India'],['bd','Bangladesh'],['lk','Sri Lanka'],['np','Nepal'],
+  ['ae','United Arab Emirates'],['sa','Saudi Arabia'],['qa','Qatar'],['kw','Kuwait'],['om','Oman'],['bh','Bahrain'],
+  ['us','United States'],['gb','United Kingdom'],['ca','Canada'],['au','Australia'],['nz','New Zealand'],['ie','Ireland'],
+  ['de','Germany'],['fr','France'],['it','Italy'],['es','Spain'],['nl','Netherlands'],['se','Sweden'],['no','Norway'],['dk','Denmark'],
+  ['tr','Turkey'],['id','Indonesia'],['my','Malaysia'],['sg','Singapore'],['ph','Philippines'],['th','Thailand'],['vn','Vietnam'],
+  ['jp','Japan'],['kr','South Korea'],['za','South Africa'],['ng','Nigeria'],['ke','Kenya'],['eg','Egypt'],
+  ['br','Brazil'],['mx','Mexico'],['ar','Argentina']
+];
+const CNAME = Object.fromEntries(COUNTRIES);
+const PRESETS = {
+  desi: ['pk','in','bd','lk','np','ae','sa','qa','gb','us','ca','au'],
+  english: ['us','gb','ca','au','nz','ie']
+};
+const STORE_LABEL = { ios: 'App Store', android: 'Google Play' };
+
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const state = {
+  stores: { ios: true, android: true },
+  app: { ios: null, android: null },
+  keywords: [],
+  countries: new Set(['us', 'pk', 'in', 'gb']),
+  proxy: '', sameOrigin: false,
+  running: false, stop: false,
+  data: { ios: {}, android: {} },
+  cells: { ios: {}, android: {} },
+  prev: {},
+  done: 0, total: 0
+};
+
+/* ---------- storage ---------- */
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('rc_settings') || 'null');
+    if (!s) return;
+    Object.assign(state.stores, s.stores || {});
+    state.app = Object.assign({ ios: null, android: null }, s.app || {});
+    state.keywords = Array.isArray(s.keywords) ? s.keywords.slice(0, 50) : [];
+    if (typeof s.proxy === 'string') state.proxy = s.proxy;
+    if (Array.isArray(s.countries) && s.countries.length) state.countries = new Set(s.countries);
+    if (s.depth) { if (s.depth.ios) $('#depth-ios').value = s.depth.ios; if (s.depth.android) $('#depth-android').value = s.depth.android; }
+  } catch (e) { /* ignore corrupted settings */ }
+}
+function saveSettings() {
+  try {
+    localStorage.setItem('rc_settings', JSON.stringify({
+      stores: state.stores, app: state.app, keywords: state.keywords, proxy: state.proxy, countries: [...state.countries],
+      depth: { ios: $('#depth-ios').value, android: $('#depth-android').value }
+    }));
+  } catch (e) { /* storage may be unavailable */ }
+}
+const loadLast = () => { try { return JSON.parse(localStorage.getItem('rc_last') || '{}'); } catch (e) { return {}; } };
+
+/* ---------- data sources ---------- */
+// App Store: Apple's public iTunes Search API, called straight from the browser with JSONP, so each
+// visitor uses their own connection and rate limit. Google Play has no browser-friendly API, so it goes
+// through a proxy (server.py, or the Cloudflare Worker in /worker).
+// Tests can shorten the delays by defining window.RC_GAP / window.RC_BACKOFF before this script runs.
+const GAP = Object.assign({ ios: 3200, android: 1200 }, window.RC_GAP || {});
+const BACKOFF = window.RC_BACKOFF ?? 15000; // pause after a rate-limit style error
+const lastCall = { ios: 0, android: 0 };
+const chain = { ios: Promise.resolve(), android: Promise.resolve() };
+function throttled(store, fn) {
+  const job = chain[store].then(async () => {
+    const wait = lastCall[store] + GAP[store] - Date.now();
+    if (wait > 0) await sleep(wait);
+    lastCall[store] = Date.now();
+    return fn();
+  });
+  chain[store] = job.catch(() => {});
+  return job;
+}
+
+let jsonpId = 0;
+function jsonp(url, timeoutMs = 20000) {
+  return new Promise((resolve, reject) => {
+    const name = '__rc_cb' + (++jsonpId);
+    const tag = document.createElement('script');
+    const done = () => { delete window[name]; tag.remove(); clearTimeout(timer); };
+    const timer = setTimeout(() => { done(); reject(new Error('App Store request timed out')); }, timeoutMs);
+    window[name] = data => { done(); resolve(data); };
+    tag.onerror = () => { done(); reject(new Error('App Store request failed (possibly rate limited). Wait a minute and try again.')); };
+    tag.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + name;
+    document.head.appendChild(tag);
+  });
+}
+
+async function api(url, opts = {}) {
+  const headers = {};
+  if (opts.body) headers['Content-Type'] = 'application/json';
+  const key = localStorage.getItem('rc_key');
+  if (key) headers['X-Access-Key'] = key;
+  let res;
+  try { res = await fetch(url, Object.assign({}, opts, { headers })); }
+  catch (e) { throw new Error('Could not reach the Google Play proxy. Check its URL.'); }
+  let data = {};
+  try { data = await res.json(); } catch (e) { /* non-JSON error */ }
+  if (res.status === 401) { $('#auth').hidden = false; const err = new Error('Access key required'); err.auth = true; throw err; }
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  return data;
+}
+
+const playAvailable = () => state.sameOrigin || !!state.proxy.trim();
+const playBase = () => (state.sameOrigin ? '' : state.proxy.trim().replace(/\/+$/, ''));
+
+async function iosSearch(term, country, limit) {
+  const u = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&country=${country}&media=software&entity=software&limit=${Math.min(limit, 200)}`;
+  const data = await throttled('ios', () => jsonp(u));
+  return (data.results || []).map(x => ({ id: String(x.trackId), name: x.trackName || '', developer: x.sellerName || '', icon: x.artworkUrl100 || '' }));
+}
+async function androidSearch(term, country, limit) {
+  if (!playAvailable()) throw new Error('Google Play needs a proxy. Add its URL under Advanced.');
+  const r = await throttled('android', () => api(`${playBase()}/api/search?store=android&country=${country}&limit=${limit}&q=${encodeURIComponent(term)}`));
+  return r.items || [];
+}
+const searchStore = (store, term, country, limit) => (store === 'ios' ? iosSearch : androidSearch)(term, country, limit);
+
+/* ---------- status ---------- */
+function setStatus(msg, isErr) { const s = $('#status'); s.textContent = msg || ''; s.classList.toggle('err', !!isErr); }
+
+/* ---------- stores + app pickers ---------- */
+const firstCountry = () => COUNTRIES.map(c => c[0]).find(c => state.countries.has(c)) || 'us';
+const pickers = {};
+
+function setupPicker(store) {
+  const root = $('#app-' + store), input = $('input', root), list = $('.suggest', root), sel = $('.selected', root), field = $('.field', root);
+  let timer = 0;
+
+  const optHtml = it => `<button type="button" class="opt" data-id="${esc(it.id)}" data-name="${esc(it.name)}" data-dev="${esc(it.developer)}" data-icon="${esc(it.icon)}">` +
+    (it.icon ? `<img src="${esc(it.icon)}" alt="">` : '<span class="ph"></span>') +
+    `<span><strong>${esc(it.name)}</strong><small>${esc(it.developer)}${it.developer ? ' · ' : ''}${esc(it.id)}</small></span></button>`;
+
+  function render() {
+    const a = state.app[store];
+    sel.hidden = !a; field.hidden = !!a; list.innerHTML = '';
+    if (a) {
+      sel.innerHTML = (a.icon ? `<img src="${esc(a.icon)}" alt="">` : '<span class="ph"></span>') +
+        `<div><strong>${esc(a.name)}</strong><small>${esc(a.developer || '')}${a.developer ? ' · ' : ''}${esc(a.id)}</small></div>` +
+        '<button type="button" class="link">Change</button>';
+    }
+  }
+  pickers[store] = { render };
+
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = input.value.trim();
+    list.innerHTML = '';
+    if (q.length < 2) return;
+    const isId = store === 'ios' ? /^\d{4,15}$/.test(q) : /^[A-Za-z]\w*(\.[A-Za-z_]\w*)+$/.test(q);
+    const manual = isId ? `<button type="button" class="opt" data-id="${esc(q)}" data-name="${esc(q)}" data-dev="" data-icon=""><span><strong>Use ${store === 'ios' ? 'Apple ID' : 'package'} ${esc(q)}</strong></span></button>` : '';
+    list.innerHTML = manual;
+    timer = setTimeout(async () => {
+      try {
+        const items = await searchStore(store, q, firstCountry(), 8);
+        if (input.value.trim() !== q) return;
+        list.innerHTML = manual + items.map(optHtml).join('') || '<p class="hint">No apps found.</p>';
+      } catch (e) { if (input.value.trim() === q) list.innerHTML = manual + `<p class="hint">${esc(e.message)}</p>`; }
+    }, 350);
+  });
+
+  list.addEventListener('click', e => {
+    const b = e.target.closest('button.opt'); if (!b) return;
+    state.app[store] = { id: b.dataset.id, name: b.dataset.name, developer: b.dataset.dev, icon: b.dataset.icon };
+    input.value = ''; render(); saveSettings();
+  });
+  sel.addEventListener('click', e => {
+    if (!e.target.closest('button.link')) return;
+    state.app[store] = null; render(); saveSettings(); input.focus();
+  });
+  render();
+}
+
+function updatePlayHint() { $('#play-hint').hidden = !(state.stores.android && !playAvailable()); }
+
+function applyStores() {
+  for (const s of ['ios', 'android']) { $('#st-' + s).checked = state.stores[s]; $('#app-' + s).hidden = !state.stores[s]; }
+  updatePlayHint();
+  updateEstimate();
+}
+
+/* ---------- keywords ---------- */
+function renderKeywords() {
+  $('#kw-chips').innerHTML = state.keywords.map((k, i) =>
+    `<span class="chip">${esc(k)} <button type="button" class="link x" data-i="${i}" aria-label="Remove ${esc(k)}">×</button></span>`).join('');
+  updateEstimate();
+}
+function addKeywords(text) {
+  text.split(/[\n,]+/).map(s => s.trim().replace(/\s+/g, ' ')).filter(Boolean).forEach(k => {
+    if (state.keywords.length < 50 && !state.keywords.some(x => x.toLowerCase() === k.toLowerCase())) state.keywords.push(k.slice(0, 100));
+  });
+  renderKeywords(); saveSettings();
+}
+
+/* ---------- countries ---------- */
+function renderCountries() {
+  const f = $('#c-filter').value.trim().toLowerCase();
+  $('#c-grid').innerHTML = COUNTRIES.filter(([c, n]) => !f || c.includes(f) || n.toLowerCase().includes(f)).map(([c, n]) =>
+    `<button type="button" class="chip ${state.countries.has(c) ? 'on' : ''}" data-c="${c}" aria-pressed="${state.countries.has(c)}">${esc(n)} <small>${c.toUpperCase()}</small></button>`).join('');
+  $('#c-count').textContent = `· ${state.countries.size} selected`;
+  updateEstimate();
+}
+
+/* ---------- estimate ---------- */
+function updateEstimate() {
+  const n = state.countries.size * state.keywords.length;
+  const stores = ['ios', 'android'].filter(s => state.stores[s]);
+  const checks = n * stores.length;
+  let secs = 0;
+  if (state.stores.ios) secs = Math.max(secs, n * 3.4);
+  if (state.stores.android) secs = Math.max(secs, n * 1.6);
+  if (!state.running) {
+    setStatus(checks ? `${checks} checks · about ${secs < 90 ? Math.round(secs) + ' sec' : Math.round(secs / 60) + ' min'}` : '');
+  }
+}
+
+/* ---------- results ---------- */
+const orderedCountries = () => COUNTRIES.map(c => c[0]).filter(c => state.countries.has(c));
+const keyOf = (store, c, kw) => `${store}|${state.app[store].id}|${c}|${kw.toLowerCase()}`;
+
+function deltaHtml(prev, cur) {
+  if (prev === undefined) return '';
+  if (prev === null && cur === null) return '';
+  if (prev === null) return '<small class="d up">new</small>';
+  if (cur === null) return '<small class="d down">lost</small>';
+  const m = prev - cur;
+  return m ? `<small class="d ${m > 0 ? 'up' : 'down'}">${m > 0 ? '▲' : '▼'}${Math.abs(m)}</small>` : '';
+}
+
+function updateCell(store, c, kw) {
+  const k = `${c}|${kw}`, el = state.cells[store][k], d = state.data[store][k];
+  if (!el) return;
+  let cls = 'r-wait', html = '…', title = 'Waiting';
+  if (d && d.error) { cls = 'r-err'; html = '!'; title = d.error; }
+  else if (d) {
+    const r = d.rank;
+    if (r === null) { cls = 'r-none'; html = '—'; title = `Not in the top ${d.scanned}`; }
+    else {
+      cls = r <= 3 ? 'r-top' : r <= 10 ? 'r-good' : r <= 50 ? 'r-mid' : 'r-low';
+      const pv = state.prev[keyOf(store, c, kw)];
+      html = `${r}${deltaHtml(pv ? pv.rank : undefined, r)}`;
+      title = `Rank ${r}`;
+    }
+    if (r === null) { const pv = state.prev[keyOf(store, c, kw)]; html += deltaHtml(pv ? pv.rank : undefined, null); }
+  }
+  el.className = 'cell ' + cls; el.innerHTML = html; el.title = title;
+  summarize(store);
+}
+
+function summarize(store) {
+  const vals = Object.entries(state.data[store]).filter(([, d]) => d && !d.error);
+  const ranked = vals.filter(([, d]) => d.rank !== null);
+  let txt = `${ranked.length} of ${vals.length} checked keywords ranked`;
+  if (ranked.length) {
+    const [bk, bd] = ranked.reduce((a, b) => (b[1].rank < a[1].rank ? b : a));
+    const i = bk.indexOf('|');
+    txt += ` · best #${bd.rank} (${bk.slice(i + 1)}, ${bk.slice(0, i).toUpperCase()})`;
+  }
+  const el = $(`#res-${store} .sum`); if (el) el.textContent = txt;
+}
+
+function buildSkeleton(stores, countries) {
+  const out = $('#results'); out.innerHTML = '';
+  state.cells = { ios: {}, android: {} };
+  for (const store of stores) {
+    const a = state.app[store];
+    const head = countries.map(c => `<th scope="col" title="${esc(CNAME[c])}">${c.toUpperCase()}</th>`).join('');
+    const rows = state.keywords.map(kw =>
+      `<tr><td title="${esc(kw)}">${esc(kw)}</td>${countries.map(c => `<td><button type="button" class="cell r-wait" data-k="${esc(c + '|' + kw)}">…</button></td>`).join('')}</tr>`).join('');
+    const sec = document.createElement('section');
+    sec.className = 'card'; sec.id = 'res-' + store; sec.dataset.store = store;
+    sec.innerHTML = `<div class="res-head"><h2>${STORE_LABEL[store]} · ${esc(a.name)}</h2><span class="sum"></span></div>` +
+      `<div class="scroll"><table><thead><tr><th scope="col">Keyword</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    out.appendChild(sec);
+    sec.querySelectorAll('button.cell').forEach(b => { state.cells[store][b.dataset.k] = b; });
+  }
+}
+
+function showDetail(store, k) {
+  const d = state.data[store][k], box = $('#detail');
+  if (!d) return;
+  const i = k.indexOf('|'), c = k.slice(0, i), kw = k.slice(i + 1);
+  let body;
+  if (d.error) body = `<p class="status err">${esc(d.error)}</p>`;
+  else {
+    const me = state.app[store].id;
+    const rankTxt = d.rank === null ? `Not in the top ${d.scanned} results` : `Your rank: <strong>#${d.rank}</strong> of ${d.scanned} scanned`;
+    body = `<p>${rankTxt}</p><small>Top results right now:</small><ol>` +
+      d.top.map(t => `<li class="${t.id === me ? 'me' : ''}">${esc(t.name)} <small>${esc(t.developer)}</small></li>`).join('') + '</ol>';
+  }
+  box.innerHTML = `<h3>“${esc(kw)}” · ${STORE_LABEL[store]} · ${esc(CNAME[c] || c)}</h3>${body}`;
+  box.hidden = false;
+}
+
+/* ---------- run ---------- */
+function validate() {
+  const stores = ['ios', 'android'].filter(s => state.stores[s]);
+  if (!stores.length) return 'Pick at least one store.';
+  for (const s of stores) if (!state.app[s]) return `Pick your ${STORE_LABEL[s]} app first.`;
+  if (state.stores.android && !playAvailable()) return 'Google Play needs a proxy. Add its URL under Advanced, or untick Google Play.';
+  if (!state.keywords.length) return 'Add at least one keyword.';
+  if (!state.countries.size) return 'Pick at least one country.';
+  return '';
+}
+
+function progress() {
+  $('#bar').value = state.total ? Math.round(state.done / state.total * 100) : 0;
+  setStatus(`Checking… ${state.done} of ${state.total}`);
+}
+
+async function runStore(store, countries) {
+  const depth = Number($('#depth-' + store).value);
+  for (const c of countries) for (const kw of state.keywords) {
+    if (state.stop) return;
+    const k = `${c}|${kw}`;
+    try {
+      const items = await searchStore(store, kw, c, depth);
+      const pos = items.findIndex(it => it.id === state.app[store].id);
+      state.data[store][k] = { rank: pos < 0 ? null : pos + 1, scanned: items.length, top: items.slice(0, 5) };
+    } catch (e) {
+      state.data[store][k] = { error: e.message };
+      if (e.auth) { state.stop = true; }
+      else if (/rate limit/i.test(e.message)) await sleep(BACKOFF);
+    }
+    updateCell(store, c, kw);
+    state.done++; progress();
+  }
+}
+
+async function run() {
+  const err = validate();
+  if (err) { setStatus(err, true); return; }
+  const stores = ['ios', 'android'].filter(s => state.stores[s]);
+  const countries = orderedCountries();
+  state.running = true; state.stop = false; state.done = 0;
+  state.total = stores.length * countries.length * state.keywords.length;
+  state.data = { ios: {}, android: {} };
+  state.prev = loadLast();
+  $('#detail').hidden = true;
+  buildSkeleton(stores, countries);
+  $('#run').disabled = true; $('#stop').hidden = false; $('#export').hidden = true; $('#bar').hidden = false;
+  progress();
+
+  await Promise.all(stores.map(s => runStore(s, countries)));
+
+  // remember this run so the next one can show changes
+  const last = loadLast(), today = new Date().toISOString().slice(0, 10);
+  for (const s of stores) for (const [k, d] of Object.entries(state.data[s])) {
+    if (!d || d.error) continue;
+    const i = k.indexOf('|');
+    last[keyOf(s, k.slice(0, i), k.slice(i + 1))] = { rank: d.rank, date: today };
+  }
+  try { localStorage.setItem('rc_last', JSON.stringify(last)); } catch (e) { /* ignore */ }
+
+  const stopped = state.stop;
+  state.running = false; state.stop = false;
+  $('#run').disabled = false; $('#stop').hidden = true; $('#bar').hidden = true; $('#export').hidden = false;
+  const failed = stores.reduce((n, s) => n + Object.values(state.data[s]).filter(d => d && d.error).length, 0);
+  setStatus(`${stopped ? 'Stopped' : 'Done'} · ${state.done} of ${state.total} checks${failed ? ` · ${failed} failed (click a “!” cell for the reason)` : ''}`, !!failed);
+}
+
+function exportCsv() {
+  const today = new Date().toISOString().slice(0, 10);
+  const rows = [['date', 'store', 'country', 'keyword', 'rank', 'scanned', 'app_id']];
+  for (const s of ['ios', 'android']) for (const [k, d] of Object.entries(state.data[s])) {
+    if (!d || d.error) continue;
+    const i = k.indexOf('|');
+    rows.push([today, s, k.slice(0, i), k.slice(i + 1), d.rank ?? '', d.scanned, state.app[s].id]);
+  }
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = `ranks-${today}.csv`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ---------- wiring ---------- */
+function init() {
+  loadSettings();
+  setupPicker('ios'); setupPicker('android');
+  for (const s of ['ios', 'android']) { pickers[s].render(); $('#st-' + s).addEventListener('change', e => { state.stores[s] = e.target.checked; applyStores(); saveSettings(); }); }
+  $('#proxy').value = state.proxy;
+  $('#proxy').addEventListener('change', e => { state.proxy = e.target.value.trim(); saveSettings(); updatePlayHint(); });
+  applyStores(); renderKeywords(); renderCountries();
+
+  const kw = $('#kw-input');
+  kw.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addKeywords(kw.value); kw.value = ''; } });
+  kw.addEventListener('blur', () => { if (kw.value.trim()) { addKeywords(kw.value); kw.value = ''; } });
+  kw.addEventListener('paste', e => { const t = (e.clipboardData || window.clipboardData).getData('text'); if (/[\n,]/.test(t)) { e.preventDefault(); addKeywords(t); } });
+  $('#kw-chips').addEventListener('click', e => {
+    const b = e.target.closest('button[data-i]'); if (!b) return;
+    state.keywords.splice(Number(b.dataset.i), 1); renderKeywords(); saveSettings();
+  });
+
+  $('#c-filter').addEventListener('input', renderCountries);
+  $('#c-grid').addEventListener('click', e => {
+    const b = e.target.closest('button[data-c]'); if (!b) return;
+    const c = b.dataset.c; state.countries.has(c) ? state.countries.delete(c) : state.countries.add(c);
+    renderCountries(); saveSettings();
+  });
+  document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+    state.countries = new Set(b.dataset.preset === 'clear' ? [] : PRESETS[b.dataset.preset]);
+    renderCountries(); saveSettings();
+  }));
+  ['ios', 'android'].forEach(s => $('#depth-' + s).addEventListener('change', saveSettings));
+
+  $('#run').addEventListener('click', run);
+  $('#stop').addEventListener('click', () => { state.stop = true; setStatus('Stopping after the current check…'); });
+  $('#export').addEventListener('click', exportCsv);
+  $('#results').addEventListener('click', e => {
+    const b = e.target.closest('button.cell'); if (!b) return;
+    showDetail(b.closest('section').dataset.store, b.dataset.k);
+  });
+  $('#key-save').addEventListener('click', () => {
+    try { localStorage.setItem('rc_key', $('#key').value); } catch (e) { /* ignore */ }
+    $('#auth').hidden = true; setStatus('Access key saved. Try again.');
+  });
+
+  // Served by server.py? Then it doubles as the Google Play proxy. On GitHub Pages this request 404s.
+  fetch('/api/config').then(r => { if (!r.ok) throw new Error('no server'); return r.json(); })
+    .then(c => { if (typeof c.auth_required !== 'boolean') throw new Error('not ours'); state.sameOrigin = true; if (c.auth_required && !localStorage.getItem('rc_key')) $('#auth').hidden = false; updatePlayHint(); })
+    .catch(() => {});
+}
+init();
+})();
+</script>
+</body>
+</html>
