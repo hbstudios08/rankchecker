@@ -1,0 +1,7 @@
+name = "rank-proxy"
+main = "play-proxy.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+# ALLOWED_ORIGIN = "https://your-site.example"
+# Set the secret with:  npx wrangler secret put ACCESS_KEY

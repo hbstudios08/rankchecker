@@ -1,36 +1,43 @@
 # Rank Checker
 
-Two ways to use the same idea:
+- `docs/index.html` is the whole website: one static file, no build step. It can be hosted on GitHub Pages.
+- `worker/play-proxy.js` is an optional free Cloudflare Worker that lets the page check **Google Play** (see below).
+- `server.py` runs the same page locally with a built-in Google Play proxy, no Cloudflare needed.
+- `rank_tracker.py` is the headless daily tracker (CSV history + `report.html`).
 
-1. **Web UI** (`server.py` + `static/index.html`): pick the store(s), find your app by name, add keywords, choose countries, and click Check ranks.
-2. **Scheduled tracker** (`rank_tracker.py`): headless daily run that stores history in CSV and builds `report.html`.
+## How it works on GitHub Pages
 
-## Web UI
+| Store | How the page gets results | Needs a proxy? |
+|---|---|---|
+| App Store | Calls Apple's public iTunes Search API straight from the visitor's browser (JSONP). Uses their own connection and rate limit. | No |
+| Google Play | Google has no browser-friendly API, so the page asks a small proxy that fetches Play search results. | Yes |
 
+Without a proxy the page still works for the App Store; the Google Play checkbox shows a hint and Play checks are blocked until a proxy URL is set under **Advanced**.
+
+## 1. Publish the page
+**Own repo:** push this folder, then Settings > Pages > Deploy from branch > `main` / `/docs`.
+**Existing site repo:** copy `docs/index.html` to e.g. `rank/index.html` and it appears at `/rank/`. The page has `noindex`, so search engines will skip it.
+
+## 2. Google Play proxy (optional, free)
+1. Cloudflare dashboard > Workers & Pages > Create > Worker. Paste in `worker/play-proxy.js` and deploy. (Or `npx wrangler deploy` from the `worker` folder.)
+2. Worker > Settings > Variables: set `ALLOWED_ORIGIN` to your site (e.g. `https://yourname.github.io`) and, optionally, a secret `ACCESS_KEY`.
+3. On the page: Advanced > paste the Worker URL (`https://rank-proxy.<you>.workers.dev`). If you set a key, the page asks for it once.
+
+Alternative: run `python server.py` somewhere reachable (it exposes the same `/api/search`) and paste its URL instead.
+
+## Run locally instead
 ```
 pip install -r requirements.txt
-python server.py
+python server.py        # http://127.0.0.1:5000  (serves docs/index.html and proxies Google Play itself)
 ```
-Open http://127.0.0.1:5000
+Env vars: `HOST`, `PORT`, `ACCESS_KEY`, `ALLOWED_ORIGIN`, `IOS_DELAY`, `PLAY_DELAY`.
 
-- **Stores:** App Store, Google Play, or both. Each shows its own app picker.
-- **App:** search by name and click the result, or paste the numeric Apple ID / Play package name.
-- **Keywords:** type and press Enter, or paste a comma-separated list.
-- **Countries:** 41 storefronts, with presets and a filter box.
-- **Results:** a keyword x country grid per store. Green is top 10, amber is top 50. Click any cell to see the top 5 apps for that keyword (your competitors), with your app highlighted.
-- **Changes since last check:** shown as ▲/▼/new/lost in each cell. Saved in your browser.
-- **Export CSV** after a run. Your selections are remembered between visits.
+## Using the page
+Pick the store(s), search for your app by name (or paste the Apple ID / package name), add keywords, choose countries, click **Check ranks**. You get a keyword by country grid per store; click a cell to see the top 5 apps for that keyword. Changes since your last check show as ▲/▼/new/lost, and settings and history live in your browser. Export CSV after a run.
 
-### Deploying it (optional)
-Run behind gunicorn (`gunicorn -w 1 --threads 8 server:app`) on any small host. Before exposing it publicly, set `ACCESS_KEY=yourpassword`, otherwise anyone can use your server as a scraping proxy. The UI will ask for the key once.
-
-Env vars: `HOST`, `PORT`, `ACCESS_KEY`, `IOS_DELAY` (default 3.2s between Apple calls), `PLAY_DELAY` (default 1s).
-
-## Scheduled tracker
-Edit `config.json` (Apple ID, package name, keywords, countries), then `python rank_tracker.py`.
-`.github/workflows/rank-tracker.yml` runs it daily; use a **private** repo.
-
-## Notes
-- iOS ranks use Apple's official iTunes Search API. They closely match real App Store results but ignore ads and personalization, so treat them as a trend.
-- Android ranks use the unofficial `google-play-scraper`; it can break or get rate-limited, especially from cloud IPs.
-- Apple allows roughly 20 searches a minute, so large checks are throttled (about 3 seconds per iOS check).
+## Limits to know about
+- App Store results come from Apple's official search API. They closely match real results but ignore ads and personalization, so treat them as a trend.
+- Apple allows roughly 20 searches a minute, so each check takes about 3 seconds. The page shows an estimate before you start.
+- Google Play returns only the first page of results (about 20 to 30 apps), however deep you ask. A dash means "not on the first page".
+- The Play proxy reads Google's page format and can break if Google changes it, or fail if Google asks the Worker's location for cookie consent. The page shows the error in that cell.
+- Rank history lives in each browser. For unattended daily history use `rank_tracker.py` with the included GitHub Actions workflow (private repo).

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
 <title>Rank Checker</title>
 <style>
 :root {
@@ -101,7 +102,7 @@ button.cell small { display:block; font-size:10px; font-weight:600; }
   <section class="card" id="auth" hidden>
     <h2>Access key</h2>
     <div class="row">
-      <div><label for="key">This server needs an access key</label><input type="password" id="key" autocomplete="off"></div>
+      <div><label for="key">Access key for your Google Play proxy / server</label><input type="password" id="key" autocomplete="off"></div>
       <div style="align-self:end"><button class="btn" id="key-save" type="button">Save</button></div>
     </div>
   </section>
@@ -112,6 +113,7 @@ button.cell small { display:block; font-size:10px; font-weight:600; }
       <label class="toggle"><input type="checkbox" id="st-ios" checked> App Store</label>
       <label class="toggle"><input type="checkbox" id="st-android" checked> Google Play</label>
     </div>
+    <p class="hint" id="play-hint" hidden>Google Play lookups need a small proxy when this page is hosted on GitHub Pages. Add its URL under Advanced, or untick Google Play. App Store checks work without it.</p>
 
     <div class="appbox" id="app-ios">
       <div class="field">
@@ -159,7 +161,11 @@ button.cell small { display:block; font-size:10px; font-weight:600; }
       <div><label for="depth-android">Google Play search depth</label>
         <select id="depth-android"><option>30</option><option selected>50</option><option>100</option></select></div>
     </div>
-    <p class="hint">Depth is how many results are scanned. If your app isn't in them, the cell shows a dash.</p>
+    <p class="hint">Depth is how many results are scanned. Google Play only returns its first page (about 20 to 30 apps), whatever the depth.</p>
+    <div style="margin-top:12px">
+      <label for="proxy">Google Play proxy URL (needed on GitHub Pages, ignored when served by server.py)</label>
+      <input type="text" id="proxy" placeholder="https://rank-proxy.yourname.workers.dev" autocomplete="off">
+    </div>
   </details>
 
   <div class="runbar">
@@ -201,6 +207,7 @@ const state = {
   app: { ios: null, android: null },
   keywords: [],
   countries: new Set(['us', 'pk', 'in', 'gb']),
+  proxy: '', sameOrigin: false,
   running: false, stop: false,
   data: { ios: {}, android: {} },
   cells: { ios: {}, android: {} },
@@ -216,6 +223,7 @@ function loadSettings() {
     Object.assign(state.stores, s.stores || {});
     state.app = Object.assign({ ios: null, android: null }, s.app || {});
     state.keywords = Array.isArray(s.keywords) ? s.keywords.slice(0, 50) : [];
+    if (typeof s.proxy === 'string') state.proxy = s.proxy;
     if (Array.isArray(s.countries) && s.countries.length) state.countries = new Set(s.countries);
     if (s.depth) { if (s.depth.ios) $('#depth-ios').value = s.depth.ios; if (s.depth.android) $('#depth-android').value = s.depth.android; }
   } catch (e) { /* ignore corrupted settings */ }
@@ -223,25 +231,76 @@ function loadSettings() {
 function saveSettings() {
   try {
     localStorage.setItem('rc_settings', JSON.stringify({
-      stores: state.stores, app: state.app, keywords: state.keywords, countries: [...state.countries],
+      stores: state.stores, app: state.app, keywords: state.keywords, proxy: state.proxy, countries: [...state.countries],
       depth: { ios: $('#depth-ios').value, android: $('#depth-android').value }
     }));
   } catch (e) { /* storage may be unavailable */ }
 }
 const loadLast = () => { try { return JSON.parse(localStorage.getItem('rc_last') || '{}'); } catch (e) { return {}; } };
 
-/* ---------- API ---------- */
-async function api(path, opts = {}) {
-  const headers = { 'Content-Type': 'application/json' };
+/* ---------- data sources ---------- */
+// App Store: Apple's public iTunes Search API, called straight from the browser with JSONP, so each
+// visitor uses their own connection and rate limit. Google Play has no browser-friendly API, so it goes
+// through a proxy (server.py, or the Cloudflare Worker in /worker).
+// Tests can shorten the delays by defining window.RC_GAP / window.RC_BACKOFF before this script runs.
+const GAP = Object.assign({ ios: 3200, android: 1200 }, window.RC_GAP || {});
+const BACKOFF = window.RC_BACKOFF ?? 15000; // pause after a rate-limit style error
+const lastCall = { ios: 0, android: 0 };
+const chain = { ios: Promise.resolve(), android: Promise.resolve() };
+function throttled(store, fn) {
+  const job = chain[store].then(async () => {
+    const wait = lastCall[store] + GAP[store] - Date.now();
+    if (wait > 0) await sleep(wait);
+    lastCall[store] = Date.now();
+    return fn();
+  });
+  chain[store] = job.catch(() => {});
+  return job;
+}
+
+let jsonpId = 0;
+function jsonp(url, timeoutMs = 20000) {
+  return new Promise((resolve, reject) => {
+    const name = '__rc_cb' + (++jsonpId);
+    const tag = document.createElement('script');
+    const done = () => { delete window[name]; tag.remove(); clearTimeout(timer); };
+    const timer = setTimeout(() => { done(); reject(new Error('App Store request timed out')); }, timeoutMs);
+    window[name] = data => { done(); resolve(data); };
+    tag.onerror = () => { done(); reject(new Error('App Store request failed (possibly rate limited). Wait a minute and try again.')); };
+    tag.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + name;
+    document.head.appendChild(tag);
+  });
+}
+
+async function api(url, opts = {}) {
+  const headers = {};
+  if (opts.body) headers['Content-Type'] = 'application/json';
   const key = localStorage.getItem('rc_key');
   if (key) headers['X-Access-Key'] = key;
-  const res = await fetch(path, Object.assign({}, opts, { headers }));
+  let res;
+  try { res = await fetch(url, Object.assign({}, opts, { headers })); }
+  catch (e) { throw new Error('Could not reach the Google Play proxy. Check its URL.'); }
   let data = {};
   try { data = await res.json(); } catch (e) { /* non-JSON error */ }
   if (res.status === 401) { $('#auth').hidden = false; const err = new Error('Access key required'); err.auth = true; throw err; }
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
   return data;
 }
+
+const playAvailable = () => state.sameOrigin || !!state.proxy.trim();
+const playBase = () => (state.sameOrigin ? '' : state.proxy.trim().replace(/\/+$/, ''));
+
+async function iosSearch(term, country, limit) {
+  const u = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&country=${country}&media=software&entity=software&limit=${Math.min(limit, 200)}`;
+  const data = await throttled('ios', () => jsonp(u));
+  return (data.results || []).map(x => ({ id: String(x.trackId), name: x.trackName || '', developer: x.sellerName || '', icon: x.artworkUrl100 || '' }));
+}
+async function androidSearch(term, country, limit) {
+  if (!playAvailable()) throw new Error('Google Play needs a proxy. Add its URL under Advanced.');
+  const r = await throttled('android', () => api(`${playBase()}/api/search?store=android&country=${country}&limit=${limit}&q=${encodeURIComponent(term)}`));
+  return r.items || [];
+}
+const searchStore = (store, term, country, limit) => (store === 'ios' ? iosSearch : androidSearch)(term, country, limit);
 
 /* ---------- status ---------- */
 function setStatus(msg, isErr) { const s = $('#status'); s.textContent = msg || ''; s.classList.toggle('err', !!isErr); }
@@ -279,9 +338,9 @@ function setupPicker(store) {
     list.innerHTML = manual;
     timer = setTimeout(async () => {
       try {
-        const r = await api(`/api/apps?store=${store}&country=${firstCountry()}&q=${encodeURIComponent(q)}`);
+        const items = await searchStore(store, q, firstCountry(), 8);
         if (input.value.trim() !== q) return;
-        list.innerHTML = manual + r.items.map(optHtml).join('') || '<p class="hint">No apps found.</p>';
+        list.innerHTML = manual + items.map(optHtml).join('') || '<p class="hint">No apps found.</p>';
       } catch (e) { if (input.value.trim() === q) list.innerHTML = manual + `<p class="hint">${esc(e.message)}</p>`; }
     }, 350);
   });
@@ -298,8 +357,11 @@ function setupPicker(store) {
   render();
 }
 
+function updatePlayHint() { $('#play-hint').hidden = !(state.stores.android && !playAvailable()); }
+
 function applyStores() {
   for (const s of ['ios', 'android']) { $('#st-' + s).checked = state.stores[s]; $('#app-' + s).hidden = !state.stores[s]; }
+  updatePlayHint();
   updateEstimate();
 }
 
@@ -421,6 +483,7 @@ function validate() {
   const stores = ['ios', 'android'].filter(s => state.stores[s]);
   if (!stores.length) return 'Pick at least one store.';
   for (const s of stores) if (!state.app[s]) return `Pick your ${STORE_LABEL[s]} app first.`;
+  if (state.stores.android && !playAvailable()) return 'Google Play needs a proxy. Add its URL under Advanced, or untick Google Play.';
   if (!state.keywords.length) return 'Add at least one keyword.';
   if (!state.countries.size) return 'Pick at least one country.';
   return '';
@@ -437,12 +500,13 @@ async function runStore(store, countries) {
     if (state.stop) return;
     const k = `${c}|${kw}`;
     try {
-      const r = await api('/api/rank', { method: 'POST', body: JSON.stringify({ store, country: c, keyword: kw, app_id: state.app[store].id, depth }) });
-      state.data[store][k] = r;
+      const items = await searchStore(store, kw, c, depth);
+      const pos = items.findIndex(it => it.id === state.app[store].id);
+      state.data[store][k] = { rank: pos < 0 ? null : pos + 1, scanned: items.length, top: items.slice(0, 5) };
     } catch (e) {
       state.data[store][k] = { error: e.message };
       if (e.auth) { state.stop = true; }
-      else if (/rate limit/i.test(e.message)) await sleep(15000);
+      else if (/rate limit/i.test(e.message)) await sleep(BACKOFF);
     }
     updateCell(store, c, kw);
     state.done++; progress();
@@ -501,6 +565,8 @@ function init() {
   loadSettings();
   setupPicker('ios'); setupPicker('android');
   for (const s of ['ios', 'android']) { pickers[s].render(); $('#st-' + s).addEventListener('change', e => { state.stores[s] = e.target.checked; applyStores(); saveSettings(); }); }
+  $('#proxy').value = state.proxy;
+  $('#proxy').addEventListener('change', e => { state.proxy = e.target.value.trim(); saveSettings(); updatePlayHint(); });
   applyStores(); renderKeywords(); renderCountries();
 
   const kw = $('#kw-input');
@@ -536,7 +602,10 @@ function init() {
     $('#auth').hidden = true; setStatus('Access key saved. Try again.');
   });
 
-  fetch('/api/config').then(r => r.json()).then(c => { if (c.auth_required && !localStorage.getItem('rc_key')) $('#auth').hidden = false; }).catch(() => {});
+  // Served by server.py? Then it doubles as the Google Play proxy. On GitHub Pages this request 404s.
+  fetch('/api/config').then(r => { if (!r.ok) throw new Error('no server'); return r.json(); })
+    .then(c => { if (typeof c.auth_required !== 'boolean') throw new Error('not ours'); state.sameOrigin = true; if (c.auth_required && !localStorage.getItem('rc_key')) $('#auth').hidden = false; updatePlayHint(); })
+    .catch(() => {});
 }
 init();
 })();
