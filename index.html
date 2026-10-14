@@ -564,15 +564,17 @@ function exportCsv() {
 /* ---------- wiring ---------- */
 function init() {
   loadSettings();
-  setupPicker('ios'); setupPicker('android');
-  for (const s of ['ios', 'android']) { pickers[s].render(); $('#st-' + s).addEventListener('change', e => { state.stores[s] = e.target.checked; applyStores(); saveSettings(); }); }
-  
+
+  // FIX: Force proxy fallback if localStorage or state was blank
   const proxyInput = $('#proxy');
   if (!state.proxy || !state.proxy.trim()) {
     state.proxy = proxyInput.value.trim();
   }
   proxyInput.value = state.proxy;
 
+  setupPicker('ios'); setupPicker('android');
+  for (const s of ['ios', 'android']) { pickers[s].render(); $('#st-' + s).addEventListener('change', e => { state.stores[s] = e.target.checked; applyStores(); saveSettings(); }); }
+  
   proxyInput.addEventListener('change', e => { 
     state.proxy = e.target.value.trim(); 
     saveSettings(); 
