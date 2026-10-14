@@ -572,7 +572,7 @@ function init() {
   setupPicker('ios'); setupPicker('android');
   for (const s of ['ios', 'android']) { pickers[s].render(); $('#st-' + s).addEventListener('change', e => { state.stores[s] = e.target.checked; applyStores(); saveSettings(); }); }
   // Fall back to your worker URL if state.proxy is empty
-  state.proxy = state.proxy || 'https://super-voice-a15e.hbstudios08.workers.dev/';
+  state.proxy = 'https://super-voice-a15e.hbstudios08.workers.dev/';
   $('#proxy').value = state.proxy;
   $('#proxy').addEventListener('change', e => { state.proxy = e.target.value.trim(); saveSettings(); updatePlayHint(); });
   applyStores(); renderKeywords(); renderCountries();
