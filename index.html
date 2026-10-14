@@ -165,12 +165,12 @@ button.cell small { display:block; font-size:10px; font-weight:600; }
     <div style="margin-top:12px">
       <label for="proxy">Google Play proxy URL (needed on GitHub Pages, ignored when served by server.py)</label>
       <input 
-  type="text" 
-  id="proxy" 
-  value="https://super-voice-a15e.hbstudios08.workers.dev/" 
-  placeholder="https://super-voice-a15e.hbstudios08.workers.dev/" 
-  autocomplete="off"
->
+        type="text" 
+        id="proxy" 
+        value="https://super-voice-a15e.hbstudios08.workers.dev/" 
+        placeholder="https://super-voice-a15e.hbstudios08.workers.dev/" 
+        autocomplete="off"
+      >
     </div>
   </details>
 
@@ -213,7 +213,7 @@ const state = {
   app: { ios: null, android: null },
   keywords: [],
   countries: new Set(['us', 'pk', 'in', 'gb']),
-  proxy: '', sameOrigin: false,
+  proxy: 'https://super-voice-a15e.hbstudios08.workers.dev/', sameOrigin: false,
   running: false, stop: false,
   data: { ios: {}, android: {} },
   cells: { ios: {}, android: {} },
@@ -229,7 +229,7 @@ function loadSettings() {
     Object.assign(state.stores, s.stores || {});
     state.app = Object.assign({ ios: null, android: null }, s.app || {});
     state.keywords = Array.isArray(s.keywords) ? s.keywords.slice(0, 50) : [];
-    if (typeof s.proxy === 'string') state.proxy = s.proxy;
+    if (typeof s.proxy === 'string' && s.proxy.trim() !== '') state.proxy = s.proxy;
     if (Array.isArray(s.countries) && s.countries.length) state.countries = new Set(s.countries);
     if (s.depth) { if (s.depth.ios) $('#depth-ios').value = s.depth.ios; if (s.depth.android) $('#depth-android').value = s.depth.android; }
   } catch (e) { /* ignore corrupted settings */ }
@@ -245,12 +245,8 @@ function saveSettings() {
 const loadLast = () => { try { return JSON.parse(localStorage.getItem('rc_last') || '{}'); } catch (e) { return {}; } };
 
 /* ---------- data sources ---------- */
-// App Store: Apple's public iTunes Search API, called straight from the browser with JSONP, so each
-// visitor uses their own connection and rate limit. Google Play has no browser-friendly API, so it goes
-// through a proxy (server.py, or the Cloudflare Worker in /worker).
-// Tests can shorten the delays by defining window.RC_GAP / window.RC_BACKOFF before this script runs.
 const GAP = Object.assign({ ios: 3200, android: 1200 }, window.RC_GAP || {});
-const BACKOFF = window.RC_BACKOFF ?? 15000; // pause after a rate-limit style error
+const BACKOFF = window.RC_BACKOFF ?? 15000;
 const lastCall = { ios: 0, android: 0 };
 const chain = { ios: Promise.resolve(), android: Promise.resolve() };
 function throttled(store, fn) {
@@ -316,7 +312,7 @@ const firstCountry = () => COUNTRIES.map(c => c[0]).find(c => state.countries.ha
 const pickers = {};
 
 function setupPicker(store) {
-  const root = $('#app-' + store), input = $('input', root), list = $('.suggest', root), sel = $('.selected', root), field = $('.field', root);
+  const root = $('#app-' + store), input = $('input', root), list =$('.suggest', root), sel = $('.selected', root), field =$('.field', root);
   let timer = 0;
 
   const optHtml = it => `<button type="button" class="opt" data-id="${esc(it.id)}" data-name="${esc(it.name)}" data-dev="${esc(it.developer)}" data-icon="${esc(it.icon)}">` +
@@ -535,7 +531,6 @@ async function run() {
 
   await Promise.all(stores.map(s => runStore(s, countries)));
 
-  // remember this run so the next one can show changes
   const last = loadLast(), today = new Date().toISOString().slice(0, 10);
   for (const s of stores) for (const [k, d] of Object.entries(state.data[s])) {
     if (!d || d.error) continue;
@@ -571,8 +566,6 @@ function init() {
   loadSettings();
   setupPicker('ios'); setupPicker('android');
   for (const s of ['ios', 'android']) { pickers[s].render(); $('#st-' + s).addEventListener('change', e => { state.stores[s] = e.target.checked; applyStores(); saveSettings(); }); }
-  // Fall back to your worker URL if state.proxy is empty
-  state.proxy = 'https://super-voice-a15e.hbstudios08.workers.dev/';
   $('#proxy').value = state.proxy;
   $('#proxy').addEventListener('change', e => { state.proxy = e.target.value.trim(); saveSettings(); updatePlayHint(); });
   applyStores(); renderKeywords(); renderCountries();
@@ -610,7 +603,6 @@ function init() {
     $('#auth').hidden = true; setStatus('Access key saved. Try again.');
   });
 
-  // Served by server.py? Then it doubles as the Google Play proxy. On GitHub Pages this request 404s.
   fetch('/api/config').then(r => { if (!r.ok) throw new Error('no server'); return r.json(); })
     .then(c => { if (typeof c.auth_required !== 'boolean') throw new Error('not ours'); state.sameOrigin = true; if (c.auth_required && !localStorage.getItem('rc_key')) $('#auth').hidden = false; updatePlayHint(); })
     .catch(() => {});
