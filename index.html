@@ -213,7 +213,7 @@ const state = {
   app: { ios: null, android: null },
   keywords: [],
   countries: new Set(['us', 'pk', 'in', 'gb']),
-  proxy: '', sameOrigin: false,
+  proxy: 'https://super-voice-a15e.hbstudios08.workers.dev/', sameOrigin: false,
   running: false, stop: false,
   data: { ios: {}, android: {} },
   cells: { ios: {}, android: {} },
@@ -567,15 +567,12 @@ function init() {
   setupPicker('ios'); setupPicker('android');
   for (const s of ['ios', 'android']) { pickers[s].render(); $('#st-' + s).addEventListener('change', e => { state.stores[s] = e.target.checked; applyStores(); saveSettings(); }); }
   
-  // Foolproof proxy field enforcement on load
   const proxyInput = $('#proxy');
-  if (!proxyInput.value.trim() && state.proxy) {
+  if (state.proxy) {
     proxyInput.value = state.proxy;
+  } else {
+    state.proxy = proxyInput.value.trim();
   }
-  if (!proxyInput.value.trim()) {
-    proxyInput.value = 'https://super-voice-a15e.hbstudios08.workers.dev/';
-  }
-  state.proxy = proxyInput.value.trim();
 
   proxyInput.addEventListener('change', e => { 
     state.proxy = e.target.value.trim(); 
