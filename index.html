@@ -113,7 +113,7 @@ button.cell small { display:block; font-size:10px; font-weight:600; }
       <label class="toggle"><input type="checkbox" id="st-ios" checked> App Store</label>
       <label class="toggle"><input type="checkbox" id="st-android" checked> Google Play</label>
     </div>
-    <p class="hint" id="play-hint" hidden>Google Play searches use the configured Cloudflare Worker. If it is unavailable, check the proxy URL under Advanced. App Store checks work independently.</p>
+    <p class="hint" id="play-hint" hidden>Google Play lookups need a small proxy when this page is hosted on GitHub Pages. Add its URL under Advanced, or untick Google Play. App Store checks work without it.</p>
 
     <div class="appbox" id="app-ios">
       <div class="field">
@@ -164,7 +164,7 @@ button.cell small { display:block; font-size:10px; font-weight:600; }
     <p class="hint">Depth is how many results are scanned. Google Play only returns its first page (about 20 to 30 apps), whatever the depth.</p>
     <div style="margin-top:12px">
       <label for="proxy">Google Play proxy URL (needed on GitHub Pages, ignored when served by server.py)</label>
-      <input type="text" id="proxy" placeholder="https://rank-proxy.yourname.workers.dev" autocomplete="off">
+      <input type="text" id="proxy" placeholder="https://super-voice-a15e.hbstudios08.workers.dev/" autocomplete="off">
     </div>
   </details>
 
@@ -197,7 +197,7 @@ const PRESETS = {
   english: ['us','gb','ca','au','nz','ie']
 };
 const STORE_LABEL = { ios: 'App Store', android: 'Google Play' };
-const DEFAULT_PLAY_PROXY = 'https://super-voice-a15e.hbstudios08.workers.dev';
+const DEFAULT_PLAY_PROXY = 'https://super-voice-a15e.hbstudios08.workers.dev/';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -224,7 +224,8 @@ function loadSettings() {
     Object.assign(state.stores, s.stores || {});
     state.app = Object.assign({ ios: null, android: null }, s.app || {});
     state.keywords = Array.isArray(s.keywords) ? s.keywords.slice(0, 50) : [];
-    if (typeof s.proxy === 'string' && s.proxy.trim()) state.proxy = s.proxy.trim();
+    // Always start with the deployed Worker, including for users with old saved settings.
+    state.proxy = DEFAULT_PLAY_PROXY;
     if (Array.isArray(s.countries) && s.countries.length) state.countries = new Set(s.countries);
     if (s.depth) { if (s.depth.ios) $('#depth-ios').value = s.depth.ios; if (s.depth.android) $('#depth-android').value = s.depth.android; }
   } catch (e) { /* ignore corrupted settings */ }
@@ -297,7 +298,7 @@ async function iosSearch(term, country, limit) {
   return (data.results || []).map(x => ({ id: String(x.trackId), name: x.trackName || '', developer: x.sellerName || '', icon: x.artworkUrl100 || '' }));
 }
 async function androidSearch(term, country, limit) {
-  if (!playAvailable()) throw new Error('Google Play needs a working proxy. Check the URL under Advanced.');
+  if (!playAvailable()) throw new Error('Google Play needs a proxy. Add its URL under Advanced.');
   const r = await throttled('android', () => api(`${playBase()}/api/search?store=android&country=${country}&limit=${limit}&q=${encodeURIComponent(term)}`));
   return r.items || [];
 }
@@ -484,7 +485,7 @@ function validate() {
   const stores = ['ios', 'android'].filter(s => state.stores[s]);
   if (!stores.length) return 'Pick at least one store.';
   for (const s of stores) if (!state.app[s]) return `Pick your ${STORE_LABEL[s]} app first.`;
-  if (state.stores.android && !playAvailable()) return 'Google Play needs a working proxy. Check the URL under Advanced, or untick Google Play.';
+  if (state.stores.android && !playAvailable()) return 'Google Play needs a proxy. Add its URL under Advanced, or untick Google Play.';
   if (!state.keywords.length) return 'Add at least one keyword.';
   if (!state.countries.size) return 'Pick at least one country.';
   return '';
