@@ -7,6 +7,10 @@
 // It is a port of what the Python `google-play-scraper` package does for `search()`, so it reads
 // the first page of results only (usually 20-30 apps) and can break if Google changes its page format.
 //
+// Keyword research also uses:
+//     GET /api/suggest?store=ios|android&q=bha&country=pk   ->   { "items": ["bhabhi card game", ...] }
+// which reads Apple's and Google Play's search autocomplete. Both are unofficial endpoints.
+//
 // Settings (Worker > Settings > Variables):
 //   ALLOWED_ORIGIN  your site's origin, e.g. https://thulla.online  (default: * = any site)
 //   ACCESS_KEY      optional secret; the page asks for it once and sends it as X-Access-Key
@@ -50,6 +54,7 @@ function parsePlaySearch(html, limit) {
     items.push({
       id: at(topRaw, [11, 0, 0]), name: at(topRaw, [2, 0, 0]),
       developer: at(topRaw, [2, 68, 0]), icon: at(topRaw, [2, 95, 0, 3, 2]),
+      installs: at(topRaw, [2, 13, 0]), score: at(topRaw, [2, 51, 0, 1]),
     });
   }
   const count = Math.min(rows.length, limit) - items.length; // same arithmetic as google-play-scraper
@@ -58,12 +63,72 @@ function parsePlaySearch(html, limit) {
     items.push({
       id: at(row, [0, 0, 0]), name: at(row, [0, 3]),
       developer: at(row, [0, 14]), icon: at(row, [0, 1, 3, 2]),
+      installs: at(row, [0, 15]), score: at(row, [0, 4, 1]),
     });
   }
   return {
     ok: true,
-    items: items.filter(x => x.id).map(x => ({ id: x.id, name: x.name || "", developer: x.developer || "", icon: x.icon || "" })),
+    items: items.filter(x => x.id).map(x => ({
+      id: x.id, name: x.name || "", developer: x.developer || "", icon: x.icon || "",
+      installs: x.installs || "", score: x.score || 0,
+    })),
   };
+}
+
+// Apple storefront IDs, used to ask the App Store's autocomplete for a specific country.
+const APPLE_STOREFRONTS = {
+  us: 143441, gb: 143444, ca: 143455, au: 143460, nz: 143461, ie: 143449, in: 143467, pk: 143477,
+  bd: 143490, lk: 143486, np: 143484, ae: 143481, sa: 143479, qa: 143498, kw: 143493, om: 143514,
+  bh: 143559, de: 143443, fr: 143442, it: 143450, es: 143454, nl: 143452, se: 143456, no: 143457,
+  dk: 143458, tr: 143480, id: 143476, my: 143473, sg: 143464, ph: 143474, th: 143475, vn: 143471,
+  jp: 143462, kr: 143466, za: 143472, ng: 143561, ke: 143529, eg: 143516, br: 143503, mx: 143468, ar: 143505,
+};
+
+function xmlUnescape(s) {
+  return s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
+    .replace(/&apos;|&#39;/g, "'").replace(/&amp;/g, "&");
+}
+
+// App Store hints come back as an Apple plist (XML); every <key>term</key> is one suggestion, best first.
+function parseAppleHints(xml) {
+  const out = [];
+  for (const m of xml.matchAll(/<key>term<\/key>\s*<string>([\s\S]*?)<\/string>/g)) out.push(xmlUnescape(m[1]).trim());
+  return [...new Set(out.filter(Boolean))];
+}
+
+// Play suggestions come back as a batchexecute response; find the line holding the IJ4APc payload.
+function parsePlaySuggest(text) {
+  for (const line of text.split("\n")) {
+    const t = line.trim();
+    if (!t.startsWith("[")) continue;
+    let outer;
+    try { outer = JSON.parse(t); } catch (e) { continue; }
+    const payload = at(outer, [0, 2]);
+    if (typeof payload !== "string") continue;
+    let data;
+    try { data = JSON.parse(payload); } catch (e) { continue; }
+    const list = at(data, [0, 0]);
+    if (Array.isArray(list)) return list.map(x => (Array.isArray(x) ? x[0] : null)).filter(x => typeof x === "string" && x);
+  }
+  return [];
+}
+
+async function suggest(store, q, country) {
+  if (store === "ios") {
+    const sf = APPLE_STOREFRONTS[country] || 143441;
+    const r = await fetch(
+      `https://search.itunes.apple.com/WebObjects/MZSearchHints.woa/wa/hints?clientApplication=Software&term=${encodeURIComponent(q)}`,
+      { headers: { "User-Agent": UA, "X-Apple-Store-Front": `${sf}-1,29` } });
+    if (!r.ok) throw new Error(`App Store suggestions returned HTTP ${r.status}`);
+    return parseAppleHints(await r.text());
+  }
+  const payload = JSON.stringify([[null, [q], [10], [2], 4]]);
+  const body = "f.req=" + encodeURIComponent(JSON.stringify([[["IJ4APc", payload]]]));
+  const r = await fetch(
+    `https://play.google.com/_/PlayStoreUi/data/batchexecute?rpcids=IJ4APc&f.sid=-697906427155521722&bl=boq_playuiserver_20190903.08_p0&hl=en&gl=${country}&authuser&soc-app=121&soc-platform=1&soc-device=1&_reqid=1065213`,
+    { method: "POST", body, headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "User-Agent": UA, "Cookie": "CONSENT=YES+" } });
+  if (!r.ok) throw new Error(`Google Play suggestions returned HTTP ${r.status}`);
+  return parsePlaySuggest(await r.text());
 }
 
 export default {
@@ -83,6 +148,19 @@ export default {
     }
 
     const url = new URL(request.url);
+    if (url.pathname === "/api/suggest") {
+      const sq = (url.searchParams.get("q") || "").trim();
+      const sc = (url.searchParams.get("country") || "us").toLowerCase();
+      const store = url.searchParams.get("store");
+      if (store !== "ios" && store !== "android") return json({ error: "store must be ios or android" }, 400);
+      if (sq.length < 1 || sq.length > 100) return json({ error: "query must be 1-100 characters" }, 400);
+      if (!/^[a-z]{2}$/.test(sc)) return json({ error: "invalid country" }, 400);
+      try {
+        return json({ items: await suggest(store, sq, sc) });
+      } catch (e) {
+        return json({ error: e.message || "Suggestions failed" }, 502);
+      }
+    }
     if (url.pathname !== "/api/search") return json({ error: "Not found" }, 404);
 
     const q = (url.searchParams.get("q") || "").trim();

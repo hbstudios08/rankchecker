@@ -16,12 +16,16 @@ Environment variables (all optional):
     PLAY_DELAY  seconds between Google Play calls (default 1.0)
 """
 import hmac
+import html as htmllib
+import json
 import os
 import re
 import threading
 import time
 
 import requests
+from urllib.parse import quote
+
 from flask import Flask, jsonify, request, send_from_directory
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -80,6 +84,8 @@ def itunes_search(term, country, limit):
                 "name": x.get("trackName", ""),
                 "developer": x.get("sellerName", ""),
                 "icon": x.get("artworkUrl100", ""),
+                "ratings": x.get("userRatingCount", 0) or 0,
+                "rating": x.get("averageUserRating", 0) or 0,
             }
             for x in r.json().get("results", [])
         ]
@@ -100,9 +106,77 @@ def play_search(term, country, limit):
             "name": x.get("title", ""),
             "developer": x.get("developer", ""),
             "icon": x.get("icon", ""),
+            "installs": x.get("installs") or "",
+            "score": x.get("score") or 0,
         }
         for x in results
     ]
+
+
+APPLE_STOREFRONTS = {
+    "us": 143441, "gb": 143444, "ca": 143455, "au": 143460, "nz": 143461, "ie": 143449, "in": 143467, "pk": 143477,
+    "bd": 143490, "lk": 143486, "np": 143484, "ae": 143481, "sa": 143479, "qa": 143498, "kw": 143493, "om": 143514,
+    "bh": 143559, "de": 143443, "fr": 143442, "it": 143450, "es": 143454, "nl": 143452, "se": 143456, "no": 143457,
+    "dk": 143458, "tr": 143480, "id": 143476, "my": 143473, "sg": 143464, "ph": 143474, "th": 143475, "vn": 143471,
+    "jp": 143462, "kr": 143466, "za": 143472, "ng": 143561, "ke": 143529, "eg": 143516, "br": 143503, "mx": 143468,
+    "ar": 143505,
+}
+
+
+def parse_apple_hints(xml):
+    """App Store hints are an Apple plist; every <key>term</key> is one suggestion, best first."""
+    out = [htmllib.unescape(m).strip() for m in re.findall(r"<key>term</key>\s*<string>([\s\S]*?)</string>", xml)]
+    return list(dict.fromkeys(x for x in out if x))
+
+
+def parse_play_suggest(text):
+    """Play suggestions come back as a batchexecute response; find the line holding the IJ4APc payload."""
+    for line in text.split("\n"):
+        line = line.strip()
+        if not line.startswith("["):
+            continue
+        try:
+            outer = json.loads(line)
+            payload = outer[0][2]
+            data = json.loads(payload)
+            lst = data[0][0]
+        except Exception:
+            continue
+        if isinstance(lst, list):
+            return [x[0] for x in lst if isinstance(x, list) and x and isinstance(x[0], str) and x[0]]
+    return []
+
+
+def ios_suggest(term, country):
+    throttle("ios")
+    sf = APPLE_STOREFRONTS.get(country, 143441)
+    try:
+        r = requests.get(
+            "https://search.itunes.apple.com/WebObjects/MZSearchHints.woa/wa/hints",
+            params={"clientApplication": "Software", "term": term},
+            headers={"User-Agent": UA, "X-Apple-Store-Front": f"{sf}-1,29"}, timeout=20)
+    except requests.RequestException as e:
+        raise UpstreamError(f"Could not reach App Store suggestions: {e}")
+    if not r.ok:
+        raise UpstreamError(f"App Store suggestions returned HTTP {r.status_code}")
+    return parse_apple_hints(r.text)
+
+
+def play_suggest(term, country):
+    throttle("android")
+    payload = json.dumps([[None, [term], [10], [2], 4]], separators=(",", ":"))
+    body = "f.req=" + quote(json.dumps([[["IJ4APc", payload]]], separators=(",", ":")), safe="")
+    url = ("https://play.google.com/_/PlayStoreUi/data/batchexecute?rpcids=IJ4APc&f.sid=-697906427155521722"
+           f"&bl=boq_playuiserver_20190903.08_p0&hl=en&gl={country}&authuser&soc-app=121&soc-platform=1"
+           "&soc-device=1&_reqid=1065213")
+    try:
+        r = requests.post(url, data=body, timeout=20, headers={
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "User-Agent": UA, "Cookie": "CONSENT=YES+"})
+    except requests.RequestException as e:
+        raise UpstreamError(f"Could not reach Google Play suggestions: {e}")
+    if not r.ok:
+        raise UpstreamError(f"Google Play suggestions returned HTTP {r.status_code}")
+    return parse_play_suggest(r.text)
 
 
 def search_store(store, term, country, limit):
@@ -211,6 +285,22 @@ def api_search():
     if len(q) < 2 or len(q) > 100:
         return bad("query must be 2-100 characters")
     return jsonify(items=search_store(store, q, country, max(1, min(limit, 200 if store == "ios" else 100))))
+
+
+@app.get("/api/suggest")
+def api_suggest():
+    """Autocomplete suggestions from the store's own search box (used by keyword research)."""
+    store = request.args.get("store", "")
+    country = request.args.get("country", "us").lower()
+    q = request.args.get("q", "").strip()
+    if store not in ("ios", "android"):
+        return bad("store must be ios or android")
+    if not COUNTRY_RE.match(country):
+        return bad("invalid country")
+    if len(q) < 1 or len(q) > 100:
+        return bad("query must be 1-100 characters")
+    items = ios_suggest(q, country) if store == "ios" else play_suggest(q, country)
+    return jsonify(items=items)
 
 
 @app.post("/api/rank")

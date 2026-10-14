@@ -89,6 +89,20 @@ button.cell small { display:block; font-size:10px; font-weight:600; }
 #detail ol { margin:8px 0 0; padding-left:22px; }
 #detail li { padding:3px 0; } #detail li.me { font-weight:700; color:var(--accent); }
 #detail small { color:var(--muted); }
+.tabs { display:flex; gap:8px; margin:0 0 16px; }
+.tab { padding:8px 18px; border:1px solid var(--line); border-radius:999px; background:var(--card); color:var(--fg); font:inherit; cursor:pointer; }
+.tab[aria-selected="true"] { background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600; }
+textarea { width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg); font:inherit; resize:vertical; }
+textarea:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.pill { display:inline-block; min-width:36px; padding:3px 8px; border-radius:8px; font-weight:600; background:var(--low-bg); }
+.tier { display:block; font-size:10px; color:var(--muted); }
+#rs-table th { cursor:pointer; user-select:none; white-space:normal; min-width:70px; }
+#rs-table th:first-child { min-width:150px; }
+#rs-table td.src { color:var(--muted); font-size:12px; }
+#rs-table td { vertical-align:middle; }
+.legend { color:var(--muted); font-size:13px; margin:10px 0 0; }
+.legend li { margin:2px 0; }
+.note { border-left:3px solid var(--warn); padding:6px 12px; background:var(--mid-bg); border-radius:0 8px 8px 0; font-size:13px; margin:10px 0 0; }
 [hidden] { display:none !important; }
 </style>
 </head>
@@ -107,6 +121,12 @@ button.cell small { display:block; font-size:10px; font-weight:600; }
     </div>
   </section>
 
+  <div class="tabs" role="tablist" aria-label="Tools">
+    <button type="button" class="tab" role="tab" id="tabbtn-rank" aria-selected="true" data-tab="rank">Rank check</button>
+    <button type="button" class="tab" role="tab" id="tabbtn-research" aria-selected="false" data-tab="research">Keyword research</button>
+  </div>
+
+  <div id="tab-rank">
   <section class="card">
     <h2><span>1</span>Stores and app</h2>
     <div role="group" aria-label="Stores">
@@ -164,7 +184,7 @@ button.cell small { display:block; font-size:10px; font-weight:600; }
     <p class="hint">Depth is how many results are scanned. Google Play only returns its first page (about 20 to 30 apps), whatever the depth.</p>
     <div style="margin-top:12px">
       <label for="proxy">Google Play proxy URL (needed on GitHub Pages, ignored when served by server.py)</label>
-      <input type="text" id="proxy" placeholder="https://super-voice-a15e.hbstudios08.workers.dev/" autocomplete="off">
+      <input type="text" id="proxy" placeholder="https://rank-proxy.yourname.workers.dev" autocomplete="off">
     </div>
   </details>
 
@@ -178,6 +198,52 @@ button.cell small { display:block; font-size:10px; font-weight:600; }
 
   <div id="results"></div>
   <section class="card" id="detail" aria-live="polite" hidden></section>
+  </div>
+
+  <div id="tab-research" hidden>
+    <section class="card">
+      <h2><span>1</span>Seed keywords</h2>
+      <div class="chips" id="rs-chips"></div>
+      <label for="rs-input" class="lbl">Add keywords</label>
+      <input type="text" id="rs-input" placeholder="Type a keyword and press Enter (or paste a list)" autocomplete="off">
+      <p class="hint"><button type="button" class="link" id="rs-copy">Use my rank-check keywords</button> &middot; up to 15 seeds</p>
+    </section>
+
+    <section class="card">
+      <h2><span>2</span>Where and how</h2>
+      <div role="group" aria-label="Research options">
+        <label class="toggle"><input type="checkbox" id="rs-ios" checked> App Store</label>
+        <label class="toggle"><input type="checkbox" id="rs-android" checked> Google Play</label>
+        <label class="toggle"><input type="checkbox" id="rs-expand" checked> Also research suggested keywords</label>
+      </div>
+      <div class="row"><div><label for="rs-country">Country</label><select id="rs-country"></select></div></div>
+      <p class="note" id="rs-note" hidden>Popularity estimates use the stores' autocomplete, and Google Play needs search results, and both come through the proxy. Add its URL under Advanced on the Rank check tab. App Store competition data works without it.</p>
+    </section>
+
+    <details class="card">
+      <summary>Real Apple popularity scores (optional)</summary>
+      <p class="hint">If you have Apple's search popularity scores (5 to 100) for this country from Apple Ads or an ASO tool, paste them as <em>keyword, score</em> lines. They replace the estimate for App Store keywords.</p>
+      <textarea id="rs-apple" rows="5" placeholder="bhabhi card game, 42&#10;thulla, 18"></textarea>
+      <div class="runbar" style="margin-top:8px"><button class="btn secondary" id="rs-apple-save" type="button">Save for this country</button><span class="hint" id="rs-apple-msg"></span></div>
+    </details>
+
+    <div class="runbar">
+      <button class="btn" id="rs-run" type="button">Research keywords</button>
+      <button class="btn secondary" id="rs-stop" type="button" hidden>Stop</button>
+      <button class="btn secondary" id="rs-export" type="button" hidden>Export CSV</button>
+      <progress id="rs-bar" max="100" value="0" hidden></progress>
+    </div>
+    <div class="status" id="rs-status" role="status" aria-live="polite"></div>
+
+    <section class="card" id="rs-results" hidden>
+      <div class="scroll"><table id="rs-table"><thead></thead><tbody></tbody></table></div>
+      <ul class="legend">
+        <li><strong>Popularity</strong> (0 to 100) is an <em>estimate</em> from how early the keyword shows up in the store's own search suggestions. It is not search volume, and no free public source gives real monthly volumes. Tiers: 80+ very high, 60+ high, 40+ medium, 20+ low.</li>
+        <li><strong>Difficulty</strong> (0 to 100) comes from how big the top 5 apps are (ratings on the App Store, installs on Google Play) and how many of the top 10 titles contain the keyword. Lower is easier.</li>
+        <li><strong>Opportunity</strong> = popularity &times; (100 &minus; difficulty) &divide; 100. Click a column heading to sort; use &ldquo;track&rdquo; to add a keyword to the rank checker.</li>
+      </ul>
+    </section>
+  </div>
 </main>
 
 <script>
@@ -197,7 +263,6 @@ const PRESETS = {
   english: ['us','gb','ca','au','nz','ie']
 };
 const STORE_LABEL = { ios: 'App Store', android: 'Google Play' };
-const DEFAULT_PLAY_PROXY = 'https://super-voice-a15e.hbstudios08.workers.dev/';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -208,7 +273,7 @@ const state = {
   app: { ios: null, android: null },
   keywords: [],
   countries: new Set(['us', 'pk', 'in', 'gb']),
-  proxy: DEFAULT_PLAY_PROXY, sameOrigin: false,
+  proxy: '', sameOrigin: false,
   running: false, stop: false,
   data: { ios: {}, android: {} },
   cells: { ios: {}, android: {} },
@@ -224,8 +289,7 @@ function loadSettings() {
     Object.assign(state.stores, s.stores || {});
     state.app = Object.assign({ ios: null, android: null }, s.app || {});
     state.keywords = Array.isArray(s.keywords) ? s.keywords.slice(0, 50) : [];
-    // Always start with the deployed Worker, including for users with old saved settings.
-    state.proxy = DEFAULT_PLAY_PROXY;
+    if (typeof s.proxy === 'string') state.proxy = s.proxy;
     if (Array.isArray(s.countries) && s.countries.length) state.countries = new Set(s.countries);
     if (s.depth) { if (s.depth.ios) $('#depth-ios').value = s.depth.ios; if (s.depth.android) $('#depth-android').value = s.depth.android; }
   } catch (e) { /* ignore corrupted settings */ }
@@ -245,10 +309,10 @@ const loadLast = () => { try { return JSON.parse(localStorage.getItem('rc_last')
 // visitor uses their own connection and rate limit. Google Play has no browser-friendly API, so it goes
 // through a proxy (server.py, or the Cloudflare Worker in /worker).
 // Tests can shorten the delays by defining window.RC_GAP / window.RC_BACKOFF before this script runs.
-const GAP = Object.assign({ ios: 3200, android: 1200 }, window.RC_GAP || {});
+const GAP = Object.assign({ ios: 3200, android: 1200, suggest: 1000 }, window.RC_GAP || {});
 const BACKOFF = window.RC_BACKOFF ?? 15000; // pause after a rate-limit style error
-const lastCall = { ios: 0, android: 0 };
-const chain = { ios: Promise.resolve(), android: Promise.resolve() };
+const lastCall = { ios: 0, android: 0, suggest: 0 };
+const chain = { ios: Promise.resolve(), android: Promise.resolve(), suggest: Promise.resolve() };
 function throttled(store, fn) {
   const job = chain[store].then(async () => {
     const wait = lastCall[store] + GAP[store] - Date.now();
@@ -295,7 +359,7 @@ const playBase = () => (state.sameOrigin ? '' : state.proxy.trim().replace(/\/+$
 async function iosSearch(term, country, limit) {
   const u = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&country=${country}&media=software&entity=software&limit=${Math.min(limit, 200)}`;
   const data = await throttled('ios', () => jsonp(u));
-  return (data.results || []).map(x => ({ id: String(x.trackId), name: x.trackName || '', developer: x.sellerName || '', icon: x.artworkUrl100 || '' }));
+  return (data.results || []).map(x => ({ id: String(x.trackId), name: x.trackName || '', developer: x.sellerName || '', icon: x.artworkUrl100 || '', ratings: x.userRatingCount || 0, rating: x.averageUserRating || 0 }));
 }
 async function androidSearch(term, country, limit) {
   if (!playAvailable()) throw new Error('Google Play needs a proxy. Add its URL under Advanced.');
@@ -359,7 +423,7 @@ function setupPicker(store) {
   render();
 }
 
-function updatePlayHint() { $('#play-hint').hidden = !(state.stores.android && !playAvailable()); }
+function updatePlayHint() { $('#play-hint').hidden = !(state.stores.android && !playAvailable()); rsNote(); }
 
 function applyStores() {
   for (const s of ['ios', 'android']) { $('#st-' + s).checked = state.stores[s]; $('#app-' + s).hidden = !state.stores[s]; }
@@ -562,6 +626,238 @@ function exportCsv() {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
+/* ---------- keyword research ---------- */
+const rs = { keywords: [], stores: ['ios', 'android'], running: false, stop: false, rows: new Map(), sort: { key: 'opp', dir: -1 }, country: 'us', done: 0, total: 0 };
+
+const median = a => { if (!a.length) return 0; const t = [...a].sort((x, y) => x - y), m = t.length >> 1; return t.length % 2 ? t[m] : (t[m - 1] + t[m]) / 2; };
+const parseInstalls = v => { const n = parseInt(String(v || '').replace(/[^0-9]/g, ''), 10); return Number.isFinite(n) ? n : 0; };
+const tierOf = n => (n >= 80 ? 'Very high' : n >= 60 ? 'High' : n >= 40 ? 'Medium' : n >= 20 ? 'Low' : 'Very low');
+const popClass = n => (n >= 60 ? 'r-top' : n >= 40 ? 'r-good' : n >= 20 ? 'r-mid' : 'r-low');
+const diffClass = n => (n <= 30 ? 'r-top' : n <= 50 ? 'r-good' : n <= 70 ? 'r-mid' : 'r-low');
+const fmtNum = n => Math.round(n).toLocaleString('en-US');
+
+function rsNote() { const el = $('#rs-note'); if (el) el.hidden = playAvailable(); }
+function setRsStatus(msg, isErr) { const el = $('#rs-status'); el.textContent = msg || ''; el.classList.toggle('err', !!isErr); }
+
+const loadApplePop = () => { try { return JSON.parse(localStorage.getItem('rc_apple_pop') || '{}'); } catch (e) { return {}; } };
+function parseApplePop(text) {
+  const out = {};
+  for (const line of String(text).split(/\r?\n/)) {
+    const parts = line.split(/[,\t;]/).map(x => x.trim().replace(/^"|"$/g, ''));
+    if (parts.length < 2) continue;
+    const score = Number(parts[parts.length - 1]);
+    const kw = parts.slice(0, -1).join(' ').trim().toLowerCase();
+    if (kw && Number.isFinite(score) && score >= 1 && score <= 100) out[kw] = Math.round(score);
+  }
+  return out;
+}
+function showApplePop() {
+  const m = loadApplePop()[$('#rs-country').value] || {};
+  $('#rs-apple').value = Object.entries(m).map(([k, v]) => `${k}, ${v}`).join('\n');
+}
+
+function saveRs() {
+  try { localStorage.setItem('rc_research', JSON.stringify({ keywords: rs.keywords, country: $('#rs-country').value,
+    stores: { ios: $('#rs-ios').checked, android: $('#rs-android').checked }, expand: $('#rs-expand').checked })); } catch (e) { /* ignore */ }
+}
+function renderRsChips() {
+  $('#rs-chips').innerHTML = rs.keywords.map((k, i) =>
+    `<span class="chip">${esc(k)} <button type="button" class="link x" data-i="${i}" aria-label="Remove ${esc(k)}">×</button></span>`).join('');
+}
+function addRsKeywords(text) {
+  text.split(/[\n,]+/).map(x => x.trim().replace(/\s+/g, ' ')).filter(Boolean).forEach(k => {
+    if (rs.keywords.length < 15 && !rs.keywords.some(x => x.toLowerCase() === k.toLowerCase())) rs.keywords.push(k.slice(0, 100));
+  });
+  renderRsChips(); saveRs();
+}
+
+async function suggestFor(store, term, country) {
+  if (!playAvailable()) throw new Error('Needs the proxy (see Advanced on the Rank check tab)');
+  const r = await throttled('suggest', () => api(`${playBase()}/api/suggest?store=${store}&country=${country}&q=${encodeURIComponent(term)}`));
+  return (r.items || []).map(x => String(x).toLowerCase());
+}
+
+// Looks for the keyword in the store's autocomplete after typing 3, 5, 8, ... characters. The fewer characters
+// it needs, and the higher it sits, the stronger the signal.
+async function probeAutocomplete(store, kw, country) {
+  const k = kw.toLowerCase(), len = k.length;
+  const lens = [...new Set([3, 5, 8, len].map(n => Math.min(n, len)))].sort((a, b) => a - b);
+  for (const p of lens) {
+    if (rs.stop) return null;
+    const sug = await suggestFor(store, k.slice(0, p), country);
+    const idx = sug.findIndex(x => x.startsWith(k));
+    if (idx >= 0) return { found: true, prefix: p, pos: idx + 1, strength: Math.max(5, Math.min(100, Math.round(100 * (1 - 0.65 * (p / len))) - 2 * idx)) };
+  }
+  return { found: false, strength: 0 };
+}
+
+function marketMetrics(store, kw, items) {
+  const top = items.slice(0, 10);
+  const sizes = items.slice(0, 5).map(it => (store === 'ios' ? (it.ratings || 0) : parseInstalls(it.installs)));
+  const avgLog = sizes.length ? sizes.reduce((a, n) => a + Math.log10(n + 1), 0) / sizes.length : 0;
+  const sizeScore = Math.min(100, avgLog / (store === 'ios' ? 6 : 8) * 100);
+  const words = kw.toLowerCase().split(/\s+/).filter(Boolean);
+  const titleMatches = top.filter(it => words.every(w => (it.name || '').toLowerCase().includes(w))).length;
+  const difficulty = Math.round(0.65 * sizeScore + 0.35 * (titleMatches / Math.max(top.length, 1)) * 100);
+  return { difficulty, titleMatches, topCount: top.length, medianSize: median(sizes) };
+}
+
+function popCell(res) {
+  if (!res) return '<td class="n">…</td>';
+  if (res.pop == null) return `<td title="${esc(res.acError || 'No autocomplete data')}"><span class="pill r-none">n/a</span></td>`;
+  const tip = res.popSource === 'Apple Ads' ? 'Imported Apple popularity score'
+    : res.ac && res.ac.found ? `Autocomplete: shows up after ${res.ac.prefix} typed characters, position ${res.ac.pos}` : 'Never showed up in autocomplete';
+  return `<td><span class="pill ${popClass(res.pop)}" title="${esc(tip)}">${res.pop}</span><small class="tier">${tierOf(res.pop)}${res.popSource === 'Apple Ads' ? ' · Apple' : ''}</small></td>`;
+}
+function diffCell(store, res) {
+  if (!res) return '<td>…</td>';
+  if (res.error) return `<td title="${esc(res.error)}"><span class="pill r-err">!</span></td>`;
+  const tip = `${res.titleMatches} of the top ${res.topCount} titles contain the keyword · top 5 typical size ${fmtNum(res.medianSize)} ${store === 'ios' ? 'ratings' : 'installs'}`;
+  return `<td><span class="pill ${diffClass(res.difficulty)}" title="${esc(tip)}">${res.difficulty}</span></td>`;
+}
+
+function renderRsTable() {
+  const stores = rs.stores;
+  const oppOf = r => { const v = stores.map(s => r[s] && r[s].opp).filter(v => v != null); return v.length ? Math.max(...v) : null; };
+  const val = (r, key) => {
+    if (key === 'kw') return r.kw.toLowerCase();
+    if (key === 'opp') { const o = oppOf(r); return o == null ? -1 : o; }
+    const [s, f] = key.split('_'); const x = r[s] && r[s][f]; return x == null ? -1 : x;
+  };
+  const rows = [...rs.rows.values()].sort((a, b) => { const A = val(a, rs.sort.key), B = val(b, rs.sort.key); return (A < B ? -1 : A > B ? 1 : 0) * rs.sort.dir; });
+  const arrow = key => (rs.sort.key === key ? (rs.sort.dir > 0 ? ' ▲' : ' ▼') : '');
+  $('#rs-table thead').innerHTML = '<tr>' +
+    `<th data-sort="kw" scope="col">Keyword${arrow('kw')}</th><th scope="col">Source</th>` +
+    stores.map(s => `<th data-sort="${s}_pop" scope="col">${s === 'ios' ? 'App Store' : 'Play'} popularity${arrow(s + '_pop')}</th><th data-sort="${s}_difficulty" scope="col">${s === 'ios' ? 'App Store' : 'Play'} difficulty${arrow(s + '_difficulty')}</th>`).join('') +
+    `<th data-sort="opp" scope="col">Opportunity${arrow('opp')}</th><th scope="col"></th></tr>`;
+  $('#rs-table tbody').innerHTML = rows.map(r => {
+    const o = oppOf(r);
+    return `<tr><td title="${esc(r.kw)}">${esc(r.kw)}</td><td class="src">${r.source}</td>` +
+      stores.map(s => popCell(r[s]) + diffCell(s, r[s])).join('') +
+      `<td>${o == null ? '<span class="pill r-none">n/a</span>' : `<span class="pill ${popClass(o)}">${o}</span>`}</td>` +
+      `<td><button type="button" class="link addkw" data-kw="${esc(r.kw)}">+ track</button></td></tr>`;
+  }).join('');
+  $('#rs-results').hidden = false;
+}
+
+function progressRs() {
+  $('#rs-bar').value = rs.total ? Math.round(rs.done / rs.total * 100) : 0;
+  setRsStatus(`Researching… ${rs.done} of ${rs.total}`);
+}
+
+async function researchStore(store, list, country, apple) {
+  for (const x of list) {
+    if (rs.stop) return;
+    const key = x.kw.toLowerCase(), row = rs.rows.get(key), res = {};
+    try {
+      Object.assign(res, marketMetrics(store, x.kw, await searchStore(store, x.kw, country, 25)));
+    } catch (e) {
+      res.error = e.message;
+      if (e.auth) rs.stop = true; else if (/rate limit/i.test(e.message)) await sleep(BACKOFF);
+    }
+    if (!playAvailable()) res.acError = 'Needs the proxy (see Advanced on the Rank check tab)';
+    else if (!rs.stop) {
+      try { res.ac = await probeAutocomplete(store, x.kw, country); } catch (e) { res.acError = e.message; if (e.auth) rs.stop = true; }
+    }
+    const a = store === 'ios' ? apple[key] : undefined;
+    res.pop = a !== undefined ? a : (res.ac ? res.ac.strength : null);
+    res.popSource = a !== undefined ? 'Apple Ads' : (res.ac ? 'Autocomplete' : null);
+    res.opp = res.pop != null && res.difficulty !== undefined ? Math.round(res.pop * (100 - res.difficulty) / 100) : null;
+    row[store] = res;
+    rs.done++; progressRs(); renderRsTable();
+  }
+}
+
+async function runResearch() {
+  const stores = ['ios', 'android'].filter(s => $('#rs-' + s).checked);
+  if (!stores.length) { setRsStatus('Pick at least one store.', true); return; }
+  if (!rs.keywords.length) { setRsStatus('Add at least one seed keyword.', true); return; }
+  const country = $('#rs-country').value;
+  Object.assign(rs, { stores, country, running: true, stop: false, rows: new Map(), done: 0, total: 0 });
+  const apple = loadApplePop()[country] || {};
+  $('#rs-run').disabled = true; $('#rs-stop').hidden = false; $('#rs-export').hidden = true; $('#rs-bar').hidden = false;
+
+  const list = rs.keywords.map(kw => ({ kw, source: 'seed' }));
+  const seen = new Set(list.map(x => x.kw.toLowerCase()));
+  if ($('#rs-expand').checked && playAvailable()) {
+    setRsStatus('Finding suggested keywords…');
+    outer: for (const seed of rs.keywords) for (const store of stores) {
+      if (rs.stop) break outer;
+      try {
+        for (const sg of (await suggestFor(store, seed, country)).slice(0, 8)) {
+          if (list.length < 30 && !seen.has(sg)) { seen.add(sg); list.push({ kw: sg, source: 'suggested' }); }
+        }
+      } catch (e) { if (e.auth) rs.stop = true; }
+    }
+  }
+  list.forEach(x => rs.rows.set(x.kw.toLowerCase(), { kw: x.kw, source: x.source }));
+  rs.total = list.length * stores.length;
+  renderRsTable(); progressRs();
+
+  await Promise.all(stores.map(s => researchStore(s, list, country, apple)));
+
+  const stopped = rs.stop;
+  rs.running = false; rs.stop = false;
+  $('#rs-run').disabled = false; $('#rs-stop').hidden = true; $('#rs-bar').hidden = true; $('#rs-export').hidden = false;
+  const cells = [...rs.rows.values()].flatMap(r => stores.map(s => r[s]).filter(Boolean));
+  const failed = cells.filter(c => c.error).length;
+  const noPop = cells.filter(c => c.pop == null).length;
+  setRsStatus(`${stopped ? 'Stopped' : 'Done'} · ${rs.rows.size} keywords${failed ? ` · ${failed} lookups failed (hover a “!”)` : ''}${noPop ? ` · popularity unavailable for ${noPop}` : ''}`, !!failed);
+}
+
+function exportResearchCsv() {
+  const rows = [['keyword', 'source', 'country', 'store', 'popularity', 'popularity_source', 'tier', 'difficulty', 'title_matches_top10', 'opportunity']];
+  for (const r of rs.rows.values()) for (const s of rs.stores) {
+    const x = r[s]; if (!x || x.error) continue;
+    rows.push([r.kw, r.source, rs.country, s, x.pop ?? '', x.popSource ?? '', x.pop != null ? tierOf(x.pop) : '', x.difficulty, x.titleMatches, x.opp ?? '']);
+  }
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = `keyword-research-${rs.country}-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function initResearch() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('rc_research') || '{}') || {}; } catch (e) { /* ignore */ }
+  if (Array.isArray(saved.keywords)) rs.keywords = saved.keywords.slice(0, 15);
+  $('#rs-country').innerHTML = COUNTRIES.map(([c, n]) => `<option value="${c}">${esc(n)}</option>`).join('');
+  $('#rs-country').value = saved.country || firstCountry();
+  if (saved.stores) { $('#rs-ios').checked = saved.stores.ios !== false; $('#rs-android').checked = saved.stores.android !== false; }
+  if (saved.expand === false) $('#rs-expand').checked = false;
+  renderRsChips(); showApplePop(); rsNote();
+
+  const inp = $('#rs-input');
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addRsKeywords(inp.value); inp.value = ''; } });
+  inp.addEventListener('blur', () => { if (inp.value.trim()) { addRsKeywords(inp.value); inp.value = ''; } });
+  inp.addEventListener('paste', e => { const t = (e.clipboardData || window.clipboardData).getData('text'); if (/[\n,]/.test(t)) { e.preventDefault(); addRsKeywords(t); } });
+  $('#rs-chips').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (!b) return; rs.keywords.splice(Number(b.dataset.i), 1); renderRsChips(); saveRs(); });
+  $('#rs-copy').addEventListener('click', () => addRsKeywords(state.keywords.join(',')));
+  ['#rs-ios', '#rs-android', '#rs-expand'].forEach(id => $(id).addEventListener('change', saveRs));
+  $('#rs-country').addEventListener('change', () => { saveRs(); showApplePop(); });
+  $('#rs-apple-save').addEventListener('click', () => {
+    const all = loadApplePop(), c = $('#rs-country').value, m = parseApplePop($('#rs-apple').value);
+    all[c] = m;
+    try { localStorage.setItem('rc_apple_pop', JSON.stringify(all)); } catch (e) { /* ignore */ }
+    $('#rs-apple-msg').textContent = `${Object.keys(m).length} scores saved for ${CNAME[c]}`;
+  });
+  $('#rs-run').addEventListener('click', runResearch);
+  $('#rs-stop').addEventListener('click', () => { rs.stop = true; setRsStatus('Stopping after the current lookup…'); });
+  $('#rs-export').addEventListener('click', exportResearchCsv);
+  $('#rs-table').addEventListener('click', e => {
+    const th = e.target.closest('th[data-sort]');
+    if (th) { const k = th.dataset.sort; rs.sort = { key: k, dir: rs.sort.key === k ? -rs.sort.dir : (k === 'kw' ? 1 : -1) }; renderRsTable(); return; }
+    const b = e.target.closest('button.addkw');
+    if (b) { addKeywords(b.dataset.kw); b.textContent = '✓ tracked'; b.disabled = true; }
+  });
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', String(x === t)));
+    $('#tab-rank').hidden = t.dataset.tab !== 'rank';
+    $('#tab-research').hidden = t.dataset.tab !== 'research';
+  }));
+}
+
 /* ---------- wiring ---------- */
 function init() {
   loadSettings();
@@ -569,7 +865,7 @@ function init() {
   for (const s of ['ios', 'android']) { pickers[s].render(); $('#st-' + s).addEventListener('change', e => { state.stores[s] = e.target.checked; applyStores(); saveSettings(); }); }
   $('#proxy').value = state.proxy;
   $('#proxy').addEventListener('change', e => { state.proxy = e.target.value.trim(); saveSettings(); updatePlayHint(); });
-  applyStores(); renderKeywords(); renderCountries();
+  applyStores(); renderKeywords(); renderCountries(); initResearch();
 
   const kw = $('#kw-input');
   kw.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addKeywords(kw.value); kw.value = ''; } });
