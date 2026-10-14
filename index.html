@@ -268,12 +268,14 @@ const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+const DEFAULT_PROXY_URL = 'https://super-voice-a15e.hbstudios08.workers.dev/';
+
 const state = {
   stores: { ios: true, android: true },
   app: { ios: null, android: null },
   keywords: [],
   countries: new Set(['us', 'pk', 'in', 'gb']),
-  proxy: '', sameOrigin: false,
+  proxy: DEFAULT_PROXY_URL, sameOrigin: false,
   running: false, stop: false,
   data: { ios: {}, android: {} },
   cells: { ios: {}, android: {} },
@@ -289,7 +291,8 @@ function loadSettings() {
     Object.assign(state.stores, s.stores || {});
     state.app = Object.assign({ ios: null, android: null }, s.app || {});
     state.keywords = Array.isArray(s.keywords) ? s.keywords.slice(0, 50) : [];
-    if (typeof s.proxy === 'string') state.proxy = s.proxy;
+    // Always start with the deployed Cloudflare Worker, even if an old proxy was saved.
+    state.proxy = DEFAULT_PROXY_URL;
     if (Array.isArray(s.countries) && s.countries.length) state.countries = new Set(s.countries);
     if (s.depth) { if (s.depth.ios) $('#depth-ios').value = s.depth.ios; if (s.depth.android) $('#depth-android').value = s.depth.android; }
   } catch (e) { /* ignore corrupted settings */ }
@@ -861,6 +864,8 @@ function initResearch() {
 /* ---------- wiring ---------- */
 function init() {
   loadSettings();
+  state.proxy = DEFAULT_PROXY_URL;
+  saveSettings();
   setupPicker('ios'); setupPicker('android');
   for (const s of ['ios', 'android']) { pickers[s].render(); $('#st-' + s).addEventListener('change', e => { state.stores[s] = e.target.checked; applyStores(); saveSettings(); }); }
   $('#proxy').value = state.proxy;
