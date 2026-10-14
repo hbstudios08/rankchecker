@@ -574,12 +574,6 @@ function init() {
     state.proxy = proxyInput.value.trim();
   }
 
-  proxyInput.addEventListener('change', e => { 
-    state.proxy = e.target.value.trim(); 
-    saveSettings(); 
-    updatePlayHint(); 
-  });
-
   applyStores(); renderKeywords(); renderCountries();
 
   const kw = $('#kw-input');
