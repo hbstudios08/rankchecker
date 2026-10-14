@@ -4,243 +4,363 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff">
 <title>Rank Checker</title>
+<script>
+/* Apply a saved theme before first paint so the page never flashes the wrong colours. */
+try { var t = localStorage.getItem('rc_theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+/* ---------- tokens ---------- */
 :root {
-  --bg:#f7f6fa; --card:#fff; --fg:#1c1b22; --muted:#6c6a78; --line:#e5e3ee;
-  --accent:#6a1b9a; --accent-2:#c62828; --on-accent:#fff;
-  --good:#1a7f37; --warn:#9a6700; --bad:#c62828;
-  --top-bg:rgba(26,127,55,.2); --good-bg:rgba(26,127,55,.12); --mid-bg:rgba(154,103,0,.14); --low-bg:rgba(108,106,120,.12);
+  color-scheme: light;
+  --font: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --bg: #f5f7f6; --surface: #ffffff; --sunken: #edf1ef; --ink: #14181a; --muted: #5b6769; --line: #dfe5e3;
+  --accent: #17684d; --on-accent: #ffffff; --danger: #b3361f;
+  --shadow: 0 1px 2px rgba(20, 24, 26, .06);
 }
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg:#0f0e14; --card:#17161e; --fg:#ecebf2; --muted:#9b99a8; --line:#2a2833;
-    --accent:#c792ea; --accent-2:#ff7b7b; --on-accent:#14111a;
-    --good:#4cc26a; --warn:#e3b341; --bad:#ff7b7b;
-    --top-bg:rgba(76,194,106,.22); --good-bg:rgba(76,194,106,.12); --mid-bg:rgba(227,179,65,.14); --low-bg:rgba(155,153,168,.12);
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0d1211; --surface: #141a19; --sunken: #1b2423; --ink: #e7eeec; --muted: #93a4a1; --line: #263130;
+    --accent: #52d3a3; --on-accent: #04221a; --danger: #ff8f7b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4);
   }
 }
-* { box-sizing:border-box; }
-body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
-.wrap { max-width:1000px; margin:0 auto; padding:0 20px; }
-.top { padding:28px 0 20px; background:linear-gradient(135deg,var(--accent-2),var(--accent)); color:#fff; }
-.top h1 { margin:0 0 2px; font-size:24px; }
-.top p { margin:0; opacity:.9; }
-main { padding:20px 20px 80px; }
-.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:16px; }
-.card h2 { font-size:16px; margin:0 0 12px; }
-.card h2 span { color:var(--accent); margin-right:6px; }
-label, .lbl { display:block; font-size:13px; color:var(--muted); margin:0 0 4px; }
-input[type=search], input[type=text], input[type=password], select {
-  width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:8px;
-  background:var(--bg); color:var(--fg); font:inherit;
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0d1211; --surface: #141a19; --sunken: #1b2423; --ink: #e7eeec; --muted: #93a4a1; --line: #263130;
+  --accent: #52d3a3; --on-accent: #04221a; --danger: #ff8f7b;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4);
 }
-input:focus-visible, select:focus-visible, button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-.row { display:flex; gap:12px; flex-wrap:wrap; }
-.row > * { flex:1 1 220px; }
-.toggle { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border:1px solid var(--line); border-radius:999px; cursor:pointer; margin:0 8px 8px 0; color:var(--fg); font-size:14px; }
-.toggle:has(input:checked) { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 12%,transparent); }
-.appbox { margin-top:10px; position:relative; }
-.suggest { margin-top:6px; display:grid; gap:4px; }
-.opt { display:flex; align-items:center; gap:10px; text-align:left; width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--fg); font:inherit; cursor:pointer; }
-.opt:hover { border-color:var(--accent); }
-.opt img, .selected img, .ph { width:36px; height:36px; border-radius:8px; flex:none; background:var(--line); }
-.opt small, .selected small { display:block; color:var(--muted); font-size:12px; }
-.selected { display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--accent); border-radius:8px; }
-.selected > div { flex:1; min-width:0; }
-.selected strong, .opt strong { font-weight:600; }
-button.link { background:none; border:0; color:var(--accent); cursor:pointer; font:inherit; padding:4px 8px; }
-.chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
-.chip { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border:1px solid var(--line); border-radius:999px; background:var(--bg); color:var(--fg); font:inherit; font-size:13px; cursor:pointer; }
-.chip small { color:var(--muted); font-size:11px; }
-.chip.on { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 14%,transparent); }
-.chip .x { color:var(--muted); }
-.hint { color:var(--muted); font-size:13px; margin:6px 0 0; }
-.presets { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; align-items:center; }
-.grid { display:flex; flex-wrap:wrap; gap:6px; max-height:190px; overflow:auto; padding:2px; }
-.btn { padding:10px 20px; border:0; border-radius:8px; background:var(--accent); color:var(--on-accent); font:inherit; font-weight:600; cursor:pointer; }
-.btn.secondary { background:transparent; color:var(--fg); border:1px solid var(--line); font-weight:500; }
-.btn:disabled { opacity:.5; cursor:not-allowed; }
-.runbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:6px; }
-.runbar progress { flex:1 1 180px; height:8px; accent-color:var(--accent); }
-.status { min-height:22px; color:var(--muted); font-size:14px; }
-.status.err { color:var(--bad); }
-details summary { cursor:pointer; font-weight:600; }
-details .row { margin-top:12px; }
-.res-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:8px; }
-.res-head h2 { margin:0; }
-.sum { color:var(--muted); font-size:13px; }
-.scroll { overflow-x:auto; }
-table { border-collapse:separate; border-spacing:0; width:100%; font-size:14px; }
-th, td { padding:4px; text-align:center; white-space:nowrap; }
-th { color:var(--muted); font-weight:500; font-size:12px; }
-th:first-child, td:first-child { text-align:left; position:sticky; left:0; background:var(--card); padding-right:12px; z-index:1; max-width:220px; overflow:hidden; text-overflow:ellipsis; }
-button.cell { width:100%; min-width:52px; padding:6px 4px; border:1px solid transparent; border-radius:8px; font:inherit; font-weight:600; cursor:pointer; background:var(--low-bg); color:var(--fg); line-height:1.2; }
-button.cell:hover { border-color:var(--accent); }
-button.cell small { display:block; font-size:10px; font-weight:600; }
-.r-top { background:var(--top-bg); color:var(--good); }
-.r-good { background:var(--good-bg); color:var(--good); }
-.r-mid { background:var(--mid-bg); color:var(--warn); }
-.r-low { background:var(--low-bg); }
-.r-none, .r-wait { background:transparent; color:var(--muted); font-weight:400; }
-.r-err { background:transparent; color:var(--bad); }
-.d.up { color:var(--good); } .d.down { color:var(--bad); }
-#detail h3 { margin:0 0 4px; font-size:15px; }
-#detail ol { margin:8px 0 0; padding-left:22px; }
-#detail li { padding:3px 0; } #detail li.me { font-weight:700; color:var(--accent); }
-#detail small { color:var(--muted); }
-.tabs { display:flex; gap:8px; margin:0 0 16px; }
-.tab { padding:8px 18px; border:1px solid var(--line); border-radius:999px; background:var(--card); color:var(--fg); font:inherit; cursor:pointer; }
-.tab[aria-selected="true"] { background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600; }
-textarea { width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg); font:inherit; resize:vertical; }
-textarea:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-.pill { display:inline-block; min-width:36px; padding:3px 8px; border-radius:8px; font-weight:600; background:var(--low-bg); }
-.tier { display:block; font-size:10px; color:var(--muted); }
-#rs-table th { cursor:pointer; user-select:none; white-space:normal; min-width:70px; }
-#rs-table th:first-child { min-width:150px; }
-#rs-table td.src { color:var(--muted); font-size:12px; }
-#rs-table td { vertical-align:middle; }
-.legend { color:var(--muted); font-size:13px; margin:10px 0 0; }
-.legend li { margin:2px 0; }
-.note { border-left:3px solid var(--warn); padding:6px 12px; background:var(--mid-bg); border-radius:0 8px 8px 0; font-size:13px; margin:10px 0 0; }
-[hidden] { display:none !important; }
+
+/* ---------- base ---------- */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 1rem/1.55 var(--font); -webkit-font-smoothing: antialiased; transition: background-color .2s, color .2s; }
+.wrap { max-width: 920px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 32px); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { margin: 0; line-height: 1.25; }
+
+/* ---------- header ---------- */
+.bar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--surface) 90%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.bar-in { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px 12px; min-height: 60px; }
+.brand { font-size: 1.125rem; font-weight: 700; letter-spacing: -.015em; }
+.icon-btn { justify-self: end; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.icon-btn:hover { background: var(--sunken); }
+.icon-btn svg { width: 20px; height: 20px; display: none; }
+.icon-btn[data-mode="auto"] .i-auto, .icon-btn[data-mode="light"] .i-light, .icon-btn[data-mode="dark"] .i-dark { display: block; }
+
+main { padding: 4px 0 96px; }
+
+/* ---------- tabs (segmented control, in the header) ---------- */
+.tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--sunken); border-radius: 11px; }
+.tab { min-height: 36px; padding: 0 16px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; font-size: .9375rem; font-weight: 500; white-space: nowrap; cursor: pointer; }
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--shadow); }
+@media (max-width: 640px) {
+  .bar-in { grid-template-columns: 1fr auto; min-height: 0; padding-top: 8px; padding-bottom: 10px; }
+  .brand { grid-area: 1 / 1; }
+  .icon-btn { grid-area: 1 / 2; }
+  .tabs { grid-area: 2 / 1 / 3 / 3; display: flex; }
+  .tab { flex: 1; padding: 0 6px; }
+}
+
+/* ---------- settings layout: label column + controls ---------- */
+.block { display: grid; gap: 14px 40px; padding: 28px 0; border-top: 1px solid var(--line); }
+#tab-rank > .block:first-child, #tab-research > .block:first-child { border-top: 0; }
+@media (min-width: 780px) { .block { grid-template-columns: 190px minmax(0, 1fr); } }
+.lead h2 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+.lead p { margin: 0; color: var(--muted); font-size: .875rem; }
+.body { min-width: 0; }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+
+/* ---------- form controls ---------- */
+label, .lbl { display: block; margin: 0 0 6px; color: var(--muted); font-size: .8125rem; font-weight: 500; }
+input[type=search], input[type=text], input[type=password], select, textarea {
+  width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); color: var(--ink); font: inherit; transition: border-color .15s;
+}
+textarea { resize: vertical; }
+input::placeholder, textarea::placeholder { color: color-mix(in srgb, var(--muted) 70%, transparent); }
+input:hover, select:hover, textarea:hover { border-color: color-mix(in srgb, var(--muted) 45%, var(--line)); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: .8125rem; }
+.note { margin: 12px 0 0; padding: 10px 12px; background: var(--sunken); border-radius: 10px; color: var(--muted); font-size: .8125rem; }
+
+.toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+.toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; margin: 0; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: .9375rem; font-weight: 500; cursor: pointer; }
+.toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+.toggle:has(input:checked) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.chips:empty { display: none; }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font: inherit; font-size: .875rem; cursor: pointer; }
+.chip small { color: var(--muted); font-size: .75rem; }
+button.chip:hover { border-color: color-mix(in srgb, var(--muted) 50%, var(--line)); }
+.chip.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+span.chip { cursor: default; padding-right: 4px; }
+.chip .link { padding: 4px 8px; font-size: 1rem; line-height: 1; color: var(--muted); }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.grid { display: flex; flex-wrap: wrap; gap: 6px; max-height: 208px; margin-top: 10px; padding: 2px; overflow: auto; }
+
+button.link { padding: 6px 8px; border: 0; border-radius: 8px; background: none; color: var(--accent); font: inherit; cursor: pointer; }
+button.link:hover { background: var(--sunken); }
+button.link:disabled { color: var(--muted); cursor: default; background: none; }
+
+.btn { min-height: 44px; padding: 0 22px; border: 1px solid var(--accent); border-radius: 10px; background: var(--accent); color: var(--on-accent); font: inherit; font-weight: 600; cursor: pointer; transition: filter .15s, transform .05s; }
+.btn:hover:not(:disabled) { filter: brightness(1.08); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn.secondary { border-color: var(--line); background: var(--surface); color: var(--ink); font-weight: 500; }
+.btn.secondary:hover:not(:disabled) { background: var(--sunken); filter: none; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ---------- app picker ---------- */
+.appbox { margin-top: 18px; }
+.appbox:first-of-type { margin-top: 0; }
+.toggles + .hint + .appbox, .toggles + .appbox { margin-top: 20px; }
+.suggest { display: grid; gap: 2px; margin-top: 6px; }
+.opt { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.opt:hover, .opt:focus-visible { background: var(--sunken); }
+.opt img, .selected img, .ph { width: 40px; height: 40px; flex: none; border-radius: 10px; background: var(--sunken); object-fit: cover; }
+.opt small, .selected small { display: block; color: var(--muted); font-size: .75rem; }
+.selected { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.selected > div { flex: 1; min-width: 0; }
+.selected strong, .opt strong { font-weight: 600; }
+.selected small, .opt span { overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- run row ---------- */
+.actions { padding: 24px 0 0; border-top: 1px solid var(--line); }
+.runbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+progress { flex: 1 1 160px; height: 6px; border: 0; border-radius: 99px; overflow: hidden; background: var(--line); appearance: none; -webkit-appearance: none; }
+progress::-webkit-progress-bar { background: var(--line); }
+progress::-webkit-progress-value { background: var(--accent); transition: width .2s; }
+progress::-moz-progress-bar { background: var(--accent); }
+.status { min-height: 24px; margin-top: 10px; color: var(--muted); font-size: .875rem; }
+.status.err { color: var(--danger); }
+
+details.adv { border-top: 1px solid var(--line); padding: 20px 0; }
+details.adv + .actions, details.adv + details.adv { margin-top: 0; }
+details.adv summary { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; cursor: pointer; font-weight: 600; font-size: 1rem; list-style: none; }
+details.adv summary::-webkit-details-marker { display: none; }
+details.adv summary::after { content: ""; width: 8px; height: 8px; margin-top: -3px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .2s; }
+details.adv[open] summary::after { transform: rotate(-135deg); margin-top: 3px; }
+details.adv .inner { padding-top: 14px; }
+
+/* ---------- results ---------- */
+.card { margin-top: 20px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.res-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 10px; }
+.res-head h2 { font-size: 1rem; font-weight: 600; }
+.sum { color: var(--muted); font-size: .8125rem; }
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .875rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 4px; text-align: center; white-space: nowrap; }
+th { color: var(--muted); font-size: .75rem; font-weight: 500; }
+th:first-child, td:first-child { position: sticky; left: 0; z-index: 1; max-width: 180px; padding-right: 12px; overflow: hidden; background: var(--surface); text-align: left; text-overflow: ellipsis; }
+td:first-child { font-weight: 500; }
+#rs-table th { min-width: 76px; cursor: pointer; user-select: none; white-space: normal; vertical-align: bottom; }
+#rs-table th:first-child { min-width: 150px; }
+#rs-table td { vertical-align: middle; }
+#rs-table td.src { color: var(--muted); font-size: .75rem; }
+.tier { display: block; color: var(--muted); font-size: .6875rem; }
+
+/* one "better is stronger" scale, used by rank cells, popularity, difficulty and opportunity.
+   Base classes come first so the .r-* modifiers below always win. */
+.cell { display: block; width: 100%; min-width: 54px; min-height: 40px; padding: 4px; border: 0; border-radius: 8px; background: var(--sunken); color: var(--ink); font: inherit; font-weight: 600; line-height: 1.15; cursor: pointer; }
+.cell:hover { box-shadow: inset 0 0 0 2px var(--accent); }
+.cell small { display: block; font-size: .625rem; font-weight: 600; }
+.pill { display: inline-block; min-width: 38px; padding: 3px 8px; border-radius: 8px; background: var(--sunken); font-weight: 600; text-align: center; }
+.r-top  { background: var(--accent); color: var(--on-accent); }
+.r-good { background: color-mix(in srgb, var(--accent) 26%, var(--surface)); color: var(--ink); }
+.r-mid  { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--ink); }
+.r-low  { background: var(--sunken); color: var(--ink); }
+.r-none, .r-wait { background: transparent; color: var(--muted); font-weight: 400; }
+.r-err  { background: transparent; color: var(--danger); }
+.d.up { color: inherit; opacity: .9; }
+.d.down { color: var(--danger); }
+.r-top .d.down { color: inherit; }
+
+#detail h3 { font-size: .9375rem; font-weight: 600; }
+#detail ol { margin: 10px 0 0; padding-left: 22px; }
+#detail li { padding: 3px 0; }
+#detail li.me { color: var(--accent); font-weight: 700; }
+#detail small { color: var(--muted); }
+#detail p { margin: 8px 0 0; }
+.legend { margin: 14px 0 0; padding-left: 18px; color: var(--muted); font-size: .8125rem; }
+.legend li { margin: 4px 0; }
+
+@media (max-width: 779px) {
+  .block { padding: 22px 0; }
+  .card { padding: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
-<header class="top"><div class="wrap">
-  <h1>Rank Checker</h1>
-  <p>See where your app ranks for any keyword, on either store, in any country.</p>
-</div></header>
-
-<main class="wrap">
-  <section class="card" id="auth" hidden>
-    <h2>Access key</h2>
-    <div class="row">
-      <div><label for="key">Access key for your Google Play proxy / server</label><input type="password" id="key" autocomplete="off"></div>
-      <div style="align-self:end"><button class="btn" id="key-save" type="button">Save</button></div>
-    </div>
-  </section>
-
+<header class="bar"><div class="wrap bar-in">
+  <div class="brand">Rank Checker</div>
   <div class="tabs" role="tablist" aria-label="Tools">
     <button type="button" class="tab" role="tab" id="tabbtn-rank" aria-selected="true" data-tab="rank">Rank check</button>
     <button type="button" class="tab" role="tab" id="tabbtn-research" aria-selected="false" data-tab="research">Keyword research</button>
   </div>
+  <button type="button" id="theme" class="icon-btn" data-mode="auto" aria-label="Theme: automatic. Click to change." title="Theme: automatic">
+    <svg class="i i-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>
+    <svg class="i i-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+    <svg class="i i-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.2A8.3 8.3 0 1 1 9.8 4a6.6 6.6 0 0 0 10.2 10.2z"/></svg>
+  </button>
+</div></header>
+
+<main class="wrap">
+  <section class="block" id="auth" hidden>
+    <div class="lead"><h2>Access key</h2><p>Your proxy or server asked for one.</p></div>
+    <div class="body"><div class="row">
+      <div><label for="key">Access key</label><input type="password" id="key" autocomplete="off"></div>
+      <div style="align-self:end"><button class="btn" id="key-save" type="button">Save key</button></div>
+    </div></div>
+  </section>
 
   <div id="tab-rank">
-  <section class="card">
-    <h2><span>1</span>Stores and app</h2>
-    <div role="group" aria-label="Stores">
-      <label class="toggle"><input type="checkbox" id="st-ios" checked> App Store</label>
-      <label class="toggle"><input type="checkbox" id="st-android" checked> Google Play</label>
-    </div>
-    <p class="hint" id="play-hint" hidden>Google Play lookups need a small proxy when this page is hosted on GitHub Pages. Add its URL under Advanced, or untick Google Play. App Store checks work without it.</p>
+    <section class="block">
+      <div class="lead"><h2>App</h2><p>Pick the stores to check and find your app.</p></div>
+      <div class="body">
+        <div class="toggles" role="group" aria-label="Stores">
+          <label class="toggle"><input type="checkbox" id="st-ios" checked> App Store</label>
+          <label class="toggle"><input type="checkbox" id="st-android" checked> Google Play</label>
+        </div>
+        <p class="hint" id="play-hint" hidden>Google Play checks need a small proxy when this page is hosted on GitHub Pages. Add its address under Options, or turn Google Play off. App Store checks work without it.</p>
 
-    <div class="appbox" id="app-ios">
-      <div class="field">
-        <label for="q-ios">App Store app</label>
-        <input type="search" id="q-ios" placeholder="Search by name, or paste the numeric Apple ID" autocomplete="off">
+        <div class="appbox" id="app-ios">
+          <div class="field">
+            <label for="q-ios">App Store app</label>
+            <input type="search" id="q-ios" placeholder="Search by name, or paste the Apple ID" autocomplete="off">
+          </div>
+          <div class="suggest" aria-live="polite"></div>
+          <div class="selected" hidden></div>
+        </div>
+
+        <div class="appbox" id="app-android">
+          <div class="field">
+            <label for="q-android">Google Play app</label>
+            <input type="search" id="q-android" placeholder="Search by name, or paste the package name" autocomplete="off">
+          </div>
+          <div class="suggest" aria-live="polite"></div>
+          <div class="selected" hidden></div>
+        </div>
       </div>
-      <div class="suggest" aria-live="polite"></div>
-      <div class="selected" hidden></div>
-    </div>
+    </section>
 
-    <div class="appbox" id="app-android">
-      <div class="field">
-        <label for="q-android">Google Play app</label>
-        <input type="search" id="q-android" placeholder="Search by name, or paste the package name (com.studio.app)" autocomplete="off">
+    <section class="block">
+      <div class="lead"><h2>Keywords</h2><p>Words people might search for. Up to 50.</p></div>
+      <div class="body">
+        <div class="chips" id="kw-chips"></div>
+        <label for="kw-input" class="sr">Add keywords</label>
+        <input type="text" id="kw-input" placeholder="Type a keyword and press Enter" autocomplete="off">
+        <p class="hint">Paste a list separated by commas or new lines to add several at once.</p>
       </div>
-      <div class="suggest" aria-live="polite"></div>
-      <div class="selected" hidden></div>
+    </section>
+
+    <section class="block">
+      <div class="lead"><h2>Countries</h2><p id="c-count"></p></div>
+      <div class="body">
+        <div class="presets">
+          <button type="button" class="chip" data-preset="desi">South Asia, Gulf and diaspora</button>
+          <button type="button" class="chip" data-preset="english">English-speaking</button>
+          <button type="button" class="chip" data-preset="clear">Clear</button>
+        </div>
+        <label for="c-filter" class="sr">Filter countries</label>
+        <input type="search" id="c-filter" placeholder="Filter countries" autocomplete="off">
+        <div class="grid" id="c-grid"></div>
+      </div>
+    </section>
+
+    <details class="adv">
+      <summary>Options</summary>
+      <div class="inner">
+        <div class="row">
+          <div><label for="depth-ios">App Store results to scan</label>
+            <select id="depth-ios"><option>50</option><option>100</option><option selected>200</option></select></div>
+          <div><label for="depth-android">Google Play results to scan</label>
+            <select id="depth-android"><option>30</option><option selected>50</option><option>100</option></select></div>
+        </div>
+        <p class="hint">Google Play only returns its first page, about 20 to 30 apps, whatever you pick.</p>
+        <div style="margin-top:16px">
+          <label for="proxy">Google Play proxy address</label>
+          <input type="text" id="proxy" placeholder="https://rank-proxy.yourname.workers.dev" autocomplete="off">
+          <p class="hint">Needed on GitHub Pages for Google Play and for keyword suggestions. Ignored when the page is served by server.py.</p>
+        </div>
+      </div>
+    </details>
+
+    <div class="actions">
+      <div class="runbar">
+        <button class="btn" id="run" type="button">Check ranks</button>
+        <button class="btn secondary" id="stop" type="button" hidden>Stop</button>
+        <button class="btn secondary" id="export" type="button" hidden>Export CSV</button>
+        <progress id="bar" max="100" value="0" hidden></progress>
+      </div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
     </div>
-  </section>
 
-  <section class="card">
-    <h2><span>2</span>Keywords</h2>
-    <div class="chips" id="kw-chips"></div>
-    <label for="kw-input" class="lbl">Add keywords</label>
-    <input type="text" id="kw-input" placeholder="Type a keyword and press Enter (or paste a list)" autocomplete="off">
-    <p class="hint">Up to 50 keywords. Pasting a list separated by commas or new lines adds them all.</p>
-  </section>
-
-  <section class="card">
-    <h2><span>3</span>Countries <small id="c-count" style="color:var(--muted);font-weight:400"></small></h2>
-    <div class="presets">
-      <button type="button" class="chip" data-preset="desi">South Asia, Gulf and diaspora</button>
-      <button type="button" class="chip" data-preset="english">English-speaking</button>
-      <button type="button" class="chip" data-preset="clear">Clear</button>
-    </div>
-    <input type="search" id="c-filter" placeholder="Filter countries" aria-label="Filter countries" autocomplete="off">
-    <div class="grid" id="c-grid" style="margin-top:8px"></div>
-  </section>
-
-  <details class="card">
-    <summary>Advanced</summary>
-    <div class="row">
-      <div><label for="depth-ios">App Store search depth</label>
-        <select id="depth-ios"><option>50</option><option>100</option><option selected>200</option></select></div>
-      <div><label for="depth-android">Google Play search depth</label>
-        <select id="depth-android"><option>30</option><option selected>50</option><option>100</option></select></div>
-    </div>
-    <p class="hint">Depth is how many results are scanned. Google Play only returns its first page (about 20 to 30 apps), whatever the depth.</p>
-    <div style="margin-top:12px">
-      <label for="proxy">Google Play proxy URL (needed on GitHub Pages, ignored when served by server.py)</label>
-      <input type="text" id="proxy" placeholder="https://rank-proxy.yourname.workers.dev" autocomplete="off">
-    </div>
-  </details>
-
-  <div class="runbar">
-    <button class="btn" id="run" type="button">Check ranks</button>
-    <button class="btn secondary" id="stop" type="button" hidden>Stop</button>
-    <button class="btn secondary" id="export" type="button" hidden>Export CSV</button>
-    <progress id="bar" max="100" value="0" hidden></progress>
-  </div>
-  <div class="status" id="status" role="status" aria-live="polite"></div>
-
-  <div id="results"></div>
-  <section class="card" id="detail" aria-live="polite" hidden></section>
+    <div id="results"></div>
+    <section class="card" id="detail" aria-live="polite" hidden></section>
   </div>
 
   <div id="tab-research" hidden>
-    <section class="card">
-      <h2><span>1</span>Seed keywords</h2>
-      <div class="chips" id="rs-chips"></div>
-      <label for="rs-input" class="lbl">Add keywords</label>
-      <input type="text" id="rs-input" placeholder="Type a keyword and press Enter (or paste a list)" autocomplete="off">
-      <p class="hint"><button type="button" class="link" id="rs-copy">Use my rank-check keywords</button> &middot; up to 15 seeds</p>
-    </section>
-
-    <section class="card">
-      <h2><span>2</span>Where and how</h2>
-      <div role="group" aria-label="Research options">
-        <label class="toggle"><input type="checkbox" id="rs-ios" checked> App Store</label>
-        <label class="toggle"><input type="checkbox" id="rs-android" checked> Google Play</label>
-        <label class="toggle"><input type="checkbox" id="rs-expand" checked> Also research suggested keywords</label>
+    <section class="block">
+      <div class="lead"><h2>Seed keywords</h2><p>Start with a few. Up to 15.</p></div>
+      <div class="body">
+        <div class="chips" id="rs-chips"></div>
+        <label for="rs-input" class="sr">Add keywords</label>
+        <input type="text" id="rs-input" placeholder="Type a keyword and press Enter" autocomplete="off">
+        <p class="hint">Paste a list to add several. <button type="button" class="link" id="rs-copy">Use my rank-check keywords</button></p>
       </div>
-      <div class="row"><div><label for="rs-country">Country</label><select id="rs-country"></select></div></div>
-      <p class="note" id="rs-note" hidden>Popularity estimates use the stores' autocomplete, and Google Play needs search results, and both come through the proxy. Add its URL under Advanced on the Rank check tab. App Store competition data works without it.</p>
     </section>
 
-    <details class="card">
-      <summary>Real Apple popularity scores (optional)</summary>
-      <p class="hint">If you have Apple's search popularity scores (5 to 100) for this country from Apple Ads or an ASO tool, paste them as <em>keyword, score</em> lines. They replace the estimate for App Store keywords.</p>
-      <textarea id="rs-apple" rows="5" placeholder="bhabhi card game, 42&#10;thulla, 18"></textarea>
-      <div class="runbar" style="margin-top:8px"><button class="btn secondary" id="rs-apple-save" type="button">Save for this country</button><span class="hint" id="rs-apple-msg"></span></div>
+    <section class="block">
+      <div class="lead"><h2>Options</h2><p>Where to research.</p></div>
+      <div class="body">
+        <div class="toggles" role="group" aria-label="Research options">
+          <label class="toggle"><input type="checkbox" id="rs-ios" checked> App Store</label>
+          <label class="toggle"><input type="checkbox" id="rs-android" checked> Google Play</label>
+          <label class="toggle"><input type="checkbox" id="rs-expand" checked> Include suggested keywords</label>
+        </div>
+        <div class="row" style="margin-top:18px"><div><label for="rs-country">Country</label><select id="rs-country"></select></div></div>
+        <p class="note" id="rs-note" hidden>Popularity estimates use the stores' autocomplete, and Google Play needs search results. Both come through the proxy: add its address under Options on the Rank check tab. App Store difficulty works without it.</p>
+      </div>
+    </section>
+
+    <details class="adv">
+      <summary>Real Apple popularity scores</summary>
+      <div class="inner">
+        <p class="hint" style="margin-top:0">If you have Apple's search popularity scores (5 to 100) for this country, from Apple Ads or an ASO tool, paste them as <em>keyword, score</em> lines. They replace the estimate for App Store keywords.</p>
+        <label for="rs-apple" class="sr">Apple popularity scores</label>
+        <textarea id="rs-apple" rows="5" placeholder="bhabhi card game, 42&#10;thulla, 18" style="margin-top:12px"></textarea>
+        <div class="runbar" style="margin-top:10px"><button class="btn secondary" id="rs-apple-save" type="button">Save scores</button><span class="hint" id="rs-apple-msg" style="margin:0"></span></div>
+      </div>
     </details>
 
-    <div class="runbar">
-      <button class="btn" id="rs-run" type="button">Research keywords</button>
-      <button class="btn secondary" id="rs-stop" type="button" hidden>Stop</button>
-      <button class="btn secondary" id="rs-export" type="button" hidden>Export CSV</button>
-      <progress id="rs-bar" max="100" value="0" hidden></progress>
+    <div class="actions">
+      <div class="runbar">
+        <button class="btn" id="rs-run" type="button">Research keywords</button>
+        <button class="btn secondary" id="rs-stop" type="button" hidden>Stop</button>
+        <button class="btn secondary" id="rs-export" type="button" hidden>Export CSV</button>
+        <progress id="rs-bar" max="100" value="0" hidden></progress>
+      </div>
+      <div class="status" id="rs-status" role="status" aria-live="polite"></div>
     </div>
-    <div class="status" id="rs-status" role="status" aria-live="polite"></div>
 
     <section class="card" id="rs-results" hidden>
       <div class="scroll"><table id="rs-table"><thead></thead><tbody></tbody></table></div>
       <ul class="legend">
-        <li><strong>Popularity</strong> (0 to 100) is an <em>estimate</em> from how early the keyword shows up in the store's own search suggestions. It is not search volume, and no free public source gives real monthly volumes. Tiers: 80+ very high, 60+ high, 40+ medium, 20+ low.</li>
-        <li><strong>Difficulty</strong> (0 to 100) comes from how big the top 5 apps are (ratings on the App Store, installs on Google Play) and how many of the top 10 titles contain the keyword. Lower is easier.</li>
-        <li><strong>Opportunity</strong> = popularity &times; (100 &minus; difficulty) &divide; 100. Click a column heading to sort; use &ldquo;track&rdquo; to add a keyword to the rank checker.</li>
+        <li><strong>Popularity</strong> (0 to 100) is an estimate based on how early the keyword shows up in the store's own search suggestions. It is not search volume, and no free public source provides real monthly volumes. Tiers: 80+ very high, 60+ high, 40+ medium, 20+ low.</li>
+        <li><strong>Difficulty</strong> (0 to 100) reflects how big the top 5 apps are (ratings on the App Store, installs on Google Play) and how many of the top 10 titles contain the keyword. Lower is easier.</li>
+        <li><strong>Opportunity</strong> is popularity &times; (100 &minus; difficulty) &divide; 100. Click a heading to sort, and use <em>+ track</em> to add a keyword to the rank checker.</li>
+        <li>Darker cells are better for you: higher ranks, higher popularity, lower difficulty.</li>
       </ul>
     </section>
   </div>
@@ -268,14 +388,12 @@ const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-const DEFAULT_PROXY_URL = 'https://super-voice-a15e.hbstudios08.workers.dev/';
-
 const state = {
   stores: { ios: true, android: true },
   app: { ios: null, android: null },
   keywords: [],
   countries: new Set(['us', 'pk', 'in', 'gb']),
-  proxy: DEFAULT_PROXY_URL, sameOrigin: false,
+  proxy: '', sameOrigin: false,
   running: false, stop: false,
   data: { ios: {}, android: {} },
   cells: { ios: {}, android: {} },
@@ -291,8 +409,7 @@ function loadSettings() {
     Object.assign(state.stores, s.stores || {});
     state.app = Object.assign({ ios: null, android: null }, s.app || {});
     state.keywords = Array.isArray(s.keywords) ? s.keywords.slice(0, 50) : [];
-    // Always start with the deployed Cloudflare Worker, even if an old proxy was saved.
-    state.proxy = DEFAULT_PROXY_URL;
+    if (typeof s.proxy === 'string') state.proxy = s.proxy;
     if (Array.isArray(s.countries) && s.countries.length) state.countries = new Set(s.countries);
     if (s.depth) { if (s.depth.ios) $('#depth-ios').value = s.depth.ios; if (s.depth.android) $('#depth-android').value = s.depth.android; }
   } catch (e) { /* ignore corrupted settings */ }
@@ -452,7 +569,7 @@ function renderCountries() {
   const f = $('#c-filter').value.trim().toLowerCase();
   $('#c-grid').innerHTML = COUNTRIES.filter(([c, n]) => !f || c.includes(f) || n.toLowerCase().includes(f)).map(([c, n]) =>
     `<button type="button" class="chip ${state.countries.has(c) ? 'on' : ''}" data-c="${c}" aria-pressed="${state.countries.has(c)}">${esc(n)} <small>${c.toUpperCase()}</small></button>`).join('');
-  $('#c-count').textContent = `· ${state.countries.size} selected`;
+  $('#c-count').textContent = `${state.countries.size} selected`;
   updateEstimate();
 }
 
@@ -465,7 +582,7 @@ function updateEstimate() {
   if (state.stores.ios) secs = Math.max(secs, n * 3.4);
   if (state.stores.android) secs = Math.max(secs, n * 1.6);
   if (!state.running) {
-    setStatus(checks ? `${checks} checks · about ${secs < 90 ? Math.round(secs) + ' sec' : Math.round(secs / 60) + ' min'}` : '');
+    setStatus(checks ? `${checks} checks, about ${secs < 90 ? Math.round(secs) + ' sec' : Math.round(secs / 60) + ' min'}` : '');
   }
 }
 
@@ -505,11 +622,11 @@ function updateCell(store, c, kw) {
 function summarize(store) {
   const vals = Object.entries(state.data[store]).filter(([, d]) => d && !d.error);
   const ranked = vals.filter(([, d]) => d.rank !== null);
-  let txt = `${ranked.length} of ${vals.length} checked keywords ranked`;
+  let txt = `${ranked.length} of ${vals.length} ranked`;
   if (ranked.length) {
     const [bk, bd] = ranked.reduce((a, b) => (b[1].rank < a[1].rank ? b : a));
     const i = bk.indexOf('|');
-    txt += ` · best #${bd.rank} (${bk.slice(i + 1)}, ${bk.slice(0, i).toUpperCase()})`;
+    txt += `. Best: #${bd.rank} for “${bk.slice(i + 1)}” in ${bk.slice(0, i).toUpperCase()}`;
   }
   const el = $(`#res-${store} .sum`); if (el) el.textContent = txt;
 }
@@ -524,7 +641,7 @@ function buildSkeleton(stores, countries) {
       `<tr><td title="${esc(kw)}">${esc(kw)}</td>${countries.map(c => `<td><button type="button" class="cell r-wait" data-k="${esc(c + '|' + kw)}">…</button></td>`).join('')}</tr>`).join('');
     const sec = document.createElement('section');
     sec.className = 'card'; sec.id = 'res-' + store; sec.dataset.store = store;
-    sec.innerHTML = `<div class="res-head"><h2>${STORE_LABEL[store]} · ${esc(a.name)}</h2><span class="sum"></span></div>` +
+    sec.innerHTML = `<div class="res-head"><h2>${STORE_LABEL[store]} results for ${esc(a.name)}</h2><span class="sum"></span></div>` +
       `<div class="scroll"><table><thead><tr><th scope="col">Keyword</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
     out.appendChild(sec);
     sec.querySelectorAll('button.cell').forEach(b => { state.cells[store][b.dataset.k] = b; });
@@ -543,7 +660,7 @@ function showDetail(store, k) {
     body = `<p>${rankTxt}</p><small>Top results right now:</small><ol>` +
       d.top.map(t => `<li class="${t.id === me ? 'me' : ''}">${esc(t.name)} <small>${esc(t.developer)}</small></li>`).join('') + '</ol>';
   }
-  box.innerHTML = `<h3>“${esc(kw)}” · ${STORE_LABEL[store]} · ${esc(CNAME[c] || c)}</h3>${body}`;
+  box.innerHTML = `<h3>“${esc(kw)}” on ${STORE_LABEL[store]} in ${esc(CNAME[c] || c)}</h3>${body}`;
   box.hidden = false;
 }
 
@@ -611,7 +728,7 @@ async function run() {
   state.running = false; state.stop = false;
   $('#run').disabled = false; $('#stop').hidden = true; $('#bar').hidden = true; $('#export').hidden = false;
   const failed = stores.reduce((n, s) => n + Object.values(state.data[s]).filter(d => d && d.error).length, 0);
-  setStatus(`${stopped ? 'Stopped' : 'Done'} · ${state.done} of ${state.total} checks${failed ? ` · ${failed} failed (click a “!” cell for the reason)` : ''}`, !!failed);
+  setStatus(`${stopped ? 'Stopped' : 'Done'}: ${state.done} of ${state.total} checks${failed ? `, ${failed} failed (click a “!” cell for the reason)` : ''}`, !!failed);
 }
 
 function exportCsv() {
@@ -710,7 +827,7 @@ function popCell(res) {
   if (res.pop == null) return `<td title="${esc(res.acError || 'No autocomplete data')}"><span class="pill r-none">n/a</span></td>`;
   const tip = res.popSource === 'Apple Ads' ? 'Imported Apple popularity score'
     : res.ac && res.ac.found ? `Autocomplete: shows up after ${res.ac.prefix} typed characters, position ${res.ac.pos}` : 'Never showed up in autocomplete';
-  return `<td><span class="pill ${popClass(res.pop)}" title="${esc(tip)}">${res.pop}</span><small class="tier">${tierOf(res.pop)}${res.popSource === 'Apple Ads' ? ' · Apple' : ''}</small></td>`;
+  return `<td><span class="pill ${popClass(res.pop)}" title="${esc(tip)}">${res.pop}</span><small class="tier">${tierOf(res.pop)}${res.popSource === 'Apple Ads' ? ' (Apple)' : ''}</small></td>`;
 }
 function diffCell(store, res) {
   if (!res) return '<td>…</td>';
@@ -805,7 +922,7 @@ async function runResearch() {
   const cells = [...rs.rows.values()].flatMap(r => stores.map(s => r[s]).filter(Boolean));
   const failed = cells.filter(c => c.error).length;
   const noPop = cells.filter(c => c.pop == null).length;
-  setRsStatus(`${stopped ? 'Stopped' : 'Done'} · ${rs.rows.size} keywords${failed ? ` · ${failed} lookups failed (hover a “!”)` : ''}${noPop ? ` · popularity unavailable for ${noPop}` : ''}`, !!failed);
+  setRsStatus(`${stopped ? 'Stopped' : 'Done'}: ${rs.rows.size} keywords${failed ? `, ${failed} lookups failed (hover a “!”)` : ''}${noPop ? `, popularity unavailable for ${noPop}` : ''}`, !!failed);
 }
 
 function exportResearchCsv() {
@@ -861,11 +978,33 @@ function initResearch() {
   }));
 }
 
+/* ---------- theme ---------- */
+function initTheme() {
+  const root = document.documentElement, btn = $('#theme'), modes = ['auto', 'light', 'dark'];
+  const names = { auto: 'automatic', light: 'light', dark: 'dark' };
+  let mode = 'auto';
+  try { const t = localStorage.getItem('rc_theme'); if (modes.includes(t)) mode = t; } catch (e) { /* ignore */ }
+  const apply = () => {
+    if (mode === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', mode);
+    btn.dataset.mode = mode;
+    btn.setAttribute('aria-label', `Theme: ${names[mode]}. Click to change.`);
+    btn.title = `Theme: ${names[mode]}`;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', getComputedStyle(root).getPropertyValue('--surface').trim() || '#ffffff');
+  };
+  btn.addEventListener('click', () => {
+    mode = modes[(modes.indexOf(mode) + 1) % modes.length];
+    try { localStorage.setItem('rc_theme', mode); } catch (e) { /* ignore */ }
+    apply();
+  });
+  if (window.matchMedia) { const mq = window.matchMedia('(prefers-color-scheme: dark)'); (mq.addEventListener ? mq.addEventListener.bind(mq, 'change') : mq.addListener.bind(mq))(apply); }
+  apply();
+}
+
 /* ---------- wiring ---------- */
 function init() {
+  initTheme();
   loadSettings();
-  state.proxy = DEFAULT_PROXY_URL;
-  saveSettings();
   setupPicker('ios'); setupPicker('android');
   for (const s of ['ios', 'android']) { pickers[s].render(); $('#st-' + s).addEventListener('change', e => { state.stores[s] = e.target.checked; applyStores(); saveSettings(); }); }
   $('#proxy').value = state.proxy;
