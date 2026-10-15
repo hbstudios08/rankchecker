@@ -64,12 +64,15 @@ main { padding: 4px 0 96px; }
 .tab { min-height: 36px; padding: 0 16px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; font-size: .9375rem; font-weight: 500; white-space: nowrap; cursor: pointer; }
 .tab:hover { color: var(--ink); }
 .tab[aria-selected="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--shadow); }
-@media (max-width: 640px) {
+@media (max-width: 860px) {
   .bar-in { grid-template-columns: 1fr auto; min-height: 0; padding-top: 8px; padding-bottom: 10px; }
   .brand { grid-area: 1 / 1; }
   .icon-btn { grid-area: 1 / 2; }
   .tabs { grid-area: 2 / 1 / 3 / 3; display: flex; }
-  .tab { flex: 1; padding: 0 6px; }
+  .tab { flex: 1; }
+}
+@media (max-width: 640px) {
+  .tab { padding: 4px 6px; min-height: 44px; font-size: .875rem; line-height: 1.15; white-space: normal; }
 }
 
 /* ---------- settings layout: label column + controls ---------- */
@@ -194,6 +197,65 @@ td:first-child { font-weight: 500; }
 .legend { margin: 14px 0 0; padding-left: 18px; color: var(--muted); font-size: .8125rem; }
 .legend li { margin: 4px 0; }
 
+
+/* ---------- ASO listing analyzer ---------- */
+.field-line { display: flex; align-items: baseline; gap: 10px; margin: 18px 0 6px; }
+.field-line:first-child { margin-top: 0; }
+.field-line label { margin: 0; }
+.field-line .link { margin-left: auto; padding: 2px 8px; }
+.counter { margin-left: auto; color: var(--muted); font-size: .8125rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.field-line .counter { margin-left: auto; }
+.field-line .link { margin-left: 0; }
+.counter.over { color: var(--danger); font-weight: 600; }
+.score-row { display: flex; align-items: center; gap: 20px; margin: 4px 0 16px; }
+.score-num { font-size: 3rem; font-weight: 700; line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.score-num small { font-size: 1rem; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+.score-meta { flex: 1; min-width: 0; }
+.score-meta p { margin: 8px 0 0; color: var(--muted); font-size: .875rem; }
+.meter { height: 8px; border-radius: 99px; background: var(--sunken); overflow: hidden; }
+.meter span { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s; }
+table.parts th, table.parts td, table.kwt th, table.kwt td { padding: 6px 8px; }
+table.parts td.why, table.kwt td.rec { white-space: normal; text-align: left; color: var(--muted); font-size: .8125rem; min-width: 200px; }
+table.parts td:first-child { font-weight: 500; }
+table.parts td.n { text-align: right; }
+table.kwt th { white-space: normal; min-width: 72px; vertical-align: bottom; }
+table.kwt th:first-child { min-width: 140px; }
+table.kwt td.rec { min-width: 230px; }
+.rel { font-size: .8125rem; font-weight: 500; }
+.rel-Low { color: var(--danger); }
+.rel-Medium { color: var(--muted); }
+.flags { list-style: none; margin: 0; padding: 0; }
+.flags li { padding: 6px 0; font-size: .9375rem; }
+.flags .pill { min-width: 52px; margin-right: 6px; font-size: .75rem; }
+.pill.r-err-bg { background: color-mix(in srgb, var(--danger) 16%, var(--surface)); color: var(--danger); }
+.hl-h { display: flex; align-items: baseline; gap: 10px; margin: 18px 0 8px; font-size: .9375rem; font-weight: 600; }
+.hl-h .sum { margin-left: 0; font-weight: 400; }
+.hl { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); white-space: pre-wrap; overflow-wrap: anywhere; font-size: .9375rem; max-height: 260px; overflow: auto; }
+mark { border-radius: 4px; padding: 0 2px; color: inherit; }
+mark.k { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+mark.soft { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.stats { margin: 0; padding-left: 18px; color: var(--ink); font-size: .9375rem; }
+.stats li { margin: 4px 0; }
+.opt-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.opt-row:last-of-type { border-bottom: 0; }
+.opt-pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; margin: 0; color: var(--ink); font-size: .9375rem; cursor: pointer; }
+.opt-pick input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; flex: none; }
+.opt-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .875rem; }
+.opt-row .counter { margin-left: 0; }
+#an-long-out { margin-top: 4px; font-size: .9375rem; }
+.ba { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) { .ba { grid-template-columns: 1fr; } }
+.ba-col { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); min-width: 0; }
+.ba-col.after { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.ba-col h4 { margin: 0 0 4px; font-size: .75rem; font-weight: 600; color: var(--muted); }
+.ba-text { margin: 0 0 6px; overflow-wrap: anywhere; font-size: .9375rem; }
+.ba-text.long { white-space: pre-wrap; max-height: 280px; overflow: auto; }
+.card details.adv { border-top: 1px solid var(--line); margin-top: 16px; padding: 14px 0 0; }
+.an-fields input, .an-fields textarea { margin: 0; }
+.runbar .hint { margin: 0; }
+.err { color: var(--danger); }
+
 @media (max-width: 779px) {
   .block { padding: 22px 0; }
   .card { padding: 14px; }
@@ -207,6 +269,7 @@ td:first-child { font-weight: 500; }
   <div class="tabs" role="tablist" aria-label="Tools">
     <button type="button" class="tab" role="tab" id="tabbtn-rank" aria-selected="true" data-tab="rank">Rank check</button>
     <button type="button" class="tab" role="tab" id="tabbtn-research" aria-selected="false" data-tab="research">Keyword research</button>
+    <button type="button" class="tab" role="tab" id="tabbtn-analyzer" aria-selected="false" data-tab="analyzer">ASO Listing Analyzer</button>
   </div>
   <button type="button" id="theme" class="icon-btn" data-mode="auto" aria-label="Theme: automatic. Click to change." title="Theme: automatic">
     <svg class="i i-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>
@@ -364,6 +427,68 @@ td:first-child { font-weight: 500; }
       </ul>
     </section>
   </div>
+  <div id="tab-analyzer" hidden>
+    <section class="block">
+      <div class="lead"><h2>Listing</h2><p>Choose a store, then load a public listing or type your own text.</p></div>
+      <div class="body">
+        <div class="toggles" role="radiogroup" aria-label="Store">
+          <label class="toggle"><input type="radio" name="an-store" id="an-store-android" value="android" checked> Google Play</label>
+          <label class="toggle"><input type="radio" name="an-store" id="an-store-ios" value="ios"> App Store</label>
+        </div>
+        <div class="row" style="margin-top:18px">
+          <div><label for="an-country">Country</label><select id="an-country"></select></div>
+          <div><label for="an-src">Store URL or app ID</label><input type="text" id="an-src" autocomplete="off" spellcheck="false"></div>
+        </div>
+        <div class="runbar" style="margin-top:12px">
+          <button class="btn secondary" id="an-fetch" type="button">Fetch listing</button>
+          <button class="btn secondary" id="an-use-app" type="button" hidden>Use selected app</button>
+        </div>
+        <p class="hint" id="an-fetch-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="lead"><h2>Listing text</h2><p>Edit freely. Counters follow the selected store's limits.</p></div>
+      <div class="body an-fields">
+        <div class="field-line"><label for="an-title">Title</label><span class="counter" id="an-title-count" aria-live="polite"></span><button type="button" class="link" id="an-title-trim" data-trim="title" hidden>Trim</button></div>
+        <input type="text" id="an-title" autocomplete="off">
+        <div class="field-line"><label for="an-mid" id="an-mid-label">Short description</label><span class="counter" id="an-mid-count" aria-live="polite"></span><button type="button" class="link" id="an-mid-trim" data-trim="mid" hidden>Trim</button></div>
+        <input type="text" id="an-mid" autocomplete="off">
+        <div id="an-kwf-wrap" hidden>
+          <div class="field-line"><label for="an-kwf">Keyword field</label><span class="counter" id="an-kwf-count" aria-live="polite"></span><button type="button" class="link" id="an-kwf-trim" data-trim="kwf" hidden>Trim</button></div>
+          <input type="text" id="an-kwf" autocomplete="off" spellcheck="false" placeholder="Apple hides this field. Paste it from App Store Connect, comma separated.">
+        </div>
+        <div class="field-line"><label for="an-long">Description</label><span class="counter" id="an-long-count" aria-live="polite"></span><button type="button" class="link" id="an-long-trim" data-trim="long" hidden>Trim</button></div>
+        <textarea id="an-long" rows="10"></textarea>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="lead"><h2>Keywords</h2><p>Reused from your other tabs.</p></div>
+      <div class="body">
+        <div class="chips" id="an-chips"></div>
+        <label for="an-kw-input" class="sr">Add keywords</label>
+        <input type="text" id="an-kw-input" placeholder="Type a keyword and press Enter" autocomplete="off">
+        <p class="hint"><button type="button" class="link" id="an-import-research">Import from Keyword research</button> <button type="button" class="link" id="an-import-rank">Import from Rank check</button></p>
+        <p class="note" id="an-metrics-note"></p>
+        <div class="row" style="margin-top:18px">
+          <div><label for="an-brand">Brand name (kept first in titles)</label><input type="text" id="an-brand" autocomplete="off" placeholder="Detected from your title if empty"></div>
+          <div><label for="an-avoid">Terms to avoid (competitor brands, comma separated)</label><input type="text" id="an-avoid" autocomplete="off"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="actions">
+      <div class="runbar">
+        <button class="btn" id="an-run" type="button">Analyze listing</button>
+        <button class="btn secondary" id="an-export-csv" type="button" hidden>Export CSV</button>
+        <button class="btn secondary" id="an-export-txt" type="button" hidden>Export TXT</button>
+      </div>
+      <div class="status" id="an-status" role="status" aria-live="polite"></div>
+    </div>
+
+    <div id="an-results" hidden></div>
+  </div>
 </main>
 
 <script>
@@ -388,12 +513,15 @@ const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+// Public Cloudflare Worker used automatically. Tests can override or clear it with window.RC_DEFAULT_PROXY.
+const DEFAULT_PROXY = window.RC_DEFAULT_PROXY ?? 'https://super-voice-a15e.hbstudios08.workers.dev';
+
 const state = {
   stores: { ios: true, android: true },
   app: { ios: null, android: null },
   keywords: [],
   countries: new Set(['us', 'pk', 'in', 'gb']),
-  proxy: '', sameOrigin: false,
+  proxy: DEFAULT_PROXY, sameOrigin: false,
   running: false, stop: false,
   data: { ios: {}, android: {} },
   cells: { ios: {}, android: {} },
@@ -409,7 +537,7 @@ function loadSettings() {
     Object.assign(state.stores, s.stores || {});
     state.app = Object.assign({ ios: null, android: null }, s.app || {});
     state.keywords = Array.isArray(s.keywords) ? s.keywords.slice(0, 50) : [];
-    if (typeof s.proxy === 'string') state.proxy = s.proxy;
+    if (typeof s.proxy === 'string' && s.proxy.trim()) state.proxy = s.proxy;
     if (Array.isArray(s.countries) && s.countries.length) state.countries = new Set(s.countries);
     if (s.depth) { if (s.depth.ios) $('#depth-ios').value = s.depth.ios; if (s.depth.android) $('#depth-android').value = s.depth.android; }
   } catch (e) { /* ignore corrupted settings */ }
@@ -918,6 +1046,7 @@ async function runResearch() {
 
   const stopped = rs.stop;
   rs.running = false; rs.stop = false;
+  saveResearchResults();
   $('#rs-run').disabled = false; $('#rs-stop').hidden = true; $('#rs-bar').hidden = true; $('#rs-export').hidden = false;
   const cells = [...rs.rows.values()].flatMap(r => stores.map(s => r[s]).filter(Boolean));
   const failed = cells.filter(c => c.error).length;
@@ -975,8 +1104,844 @@ function initResearch() {
     document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', String(x === t)));
     $('#tab-rank').hidden = t.dataset.tab !== 'rank';
     $('#tab-research').hidden = t.dataset.tab !== 'research';
+    $('#tab-analyzer').hidden = t.dataset.tab !== 'analyzer';
+    if (t.dataset.tab === 'analyzer') anOnShow();
   }));
 }
+
+/* ---------- ASO listing analyzer ---------- */
+// Everything below is deterministic JavaScript: no AI calls, no external libraries.
+const AN_KEY = 'rc_analyzer';
+const AN_LIMITS = { android: { title: 30, short: 80, long: 4000 }, ios: { title: 30, subtitle: 30, keywords: 100, long: 4000 } };
+const AN_STOP = new Set('a an and are as at be been by for from has have in into is it its of on or our so that the their this to up us we with you your'.split(' '));
+const AN_SMALL = new Set(['a', 'an', 'and', 'as', 'at', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'vs', 'with']);
+// A short, built-in list of well-known trademarks to keep out of generated copy. Add your own under "Terms to avoid".
+const AN_TM = ['candy crush', 'zynga', 'pokerstars', 'uno', 'ludo king', 'teen patti gold', 'dream11', 'whatsapp', 'facebook', 'instagram', 'tiktok', 'youtube', 'pubg', 'free fire', 'minecraft', 'roblox', 'fortnite'];
+const AN_PROMO = /\b(best|#\s?1|no\.?\s?1|number one|top|free|new|sale|discount|download now|install now|official)\b/i;
+const AN_RISKY = /\b(best|#\s?1|no\.?\s?1|number one|ultimate|most addictive|guaranteed|world'?s (?:best|largest|first)|top[- ]rated|award[- ]winning|real money|cash prizes?|high[- ]stakes|gambl\w*|betting)\b/i;
+const AN_PLATFORM = /\b(android|google play|play store|playstore|samsung|huawei|amazon appstore)\b/i;
+
+const an = {
+  store: 'android', country: 'us',
+  src: { android: '', ios: '' },
+  app: { android: null, ios: null },
+  fields: { android: { title: '', short: '', long: '' }, ios: { title: '', subtitle: '', keywords: '', long: '' } },
+  keywords: [], brand: '', avoid: '',
+  sel: { title: 0, mid: 0 },
+  last: null
+};
+
+/* ----- text helpers ----- */
+const anNorm = s => String(s ?? '').normalize('NFKC').replace(/[’‘]/g, "'").toLowerCase();
+const anTok = s => anNorm(s).match(/[\p{L}\p{N}]+(?:'[\p{L}\p{N}]+)*/gu) || [];
+const anStem = w => {
+  if (w.length > 4 && w.endsWith('ies')) return w.slice(0, -3) + 'y';
+  if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') && !w.endsWith("'s")) return w.slice(0, -1);
+  return w;
+};
+const anStemTok = s => anTok(s).map(anStem);
+const anLen = s => [...String(s ?? '')].length;
+const anBytes = s => new TextEncoder().encode(String(s ?? '')).length;
+const anCap = s => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+const anTitleCase = s => String(s).split(/\s+/).filter(Boolean).map((w, i) => (i > 0 && AN_SMALL.has(w.toLowerCase()) ? w.toLowerCase() : anCap(w))).join(' ');
+const anList = a => (a.length <= 1 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]);
+const anEscRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const anContent = stems => { const c = stems.filter(w => !AN_STOP.has(w)); return c.length ? c : stems; };
+const anAvoidList = () => [...AN_TM, ...an.avoid.split(/[,\n]+/).map(x => anNorm(x).trim()).filter(Boolean)];
+const anHasAvoid = text => { const t = ' ' + anTok(text).join(' ') + ' '; return anAvoidList().some(a => a && t.includes(' ' + anTok(a).join(' ') + ' ')); };
+
+function anMatch(text, kw) {
+  const t = anStemTok(text), p = anStemTok(kw);
+  if (!p.length) return { type: 'none', count: 0, first: -1, total: t.length };
+  let count = 0, first = -1;
+  for (let i = 0; i + p.length <= t.length; i++) {
+    let ok = true;
+    for (let j = 0; j < p.length; j++) if (t[i + j] !== p[j]) { ok = false; break; }
+    if (ok) { count++; if (first < 0) first = i; }
+  }
+  const set = new Set(t), need = anContent(p), present = need.filter(w => set.has(w)).length;
+  const type = count ? 'exact' : (present === need.length && need.length > 1) ? 'words' : present ? 'partial' : 'none';
+  return { type, count, first, total: t.length, present, need: need.length };
+}
+
+function anRelevance(kw, allText) {
+  const t = new Set(anStemTok(allText)), need = anContent(anStemTok(kw));
+  const ratio = need.length ? need.filter(w => t.has(w)).length / need.length : 0;
+  return { ratio, level: ratio === 1 ? 'High' : ratio >= 0.5 ? 'Medium' : 'Low' };
+}
+
+function anSyllables(w) {
+  w = w.toLowerCase().replace(/[^a-z]/g, '');
+  if (!w) return 1;
+  if (w.length <= 3) return 1;
+  w = w.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').replace(/^y/, '');
+  const m = w.match(/[aeiouy]{1,2}/g);
+  return m ? m.length : 1;
+}
+
+function anReadability(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return { empty: true };
+  const words = anTok(raw), n = words.length;
+  const sentences = raw.split(/[.!?]+(?:\s|$)|\n+/).map(s => s.trim()).filter(s => anTok(s).length > 0);
+  const sCount = Math.max(sentences.length, 1);
+  const letters = (raw.match(/\p{L}/gu) || []).length, latin = (raw.match(/[A-Za-z]/g) || []).length;
+  const isLatin = letters > 0 && latin / letters >= 0.7;
+  const syl = isLatin ? words.reduce((a, w) => a + anSyllables(w), 0) : 0;
+  const avgSentence = n / sCount;
+  const flesch = isLatin && n >= 30 ? Math.round(206.835 - 1.015 * avgSentence - 84.6 * (syl / n)) : null;
+  const lines = raw.split(/\r?\n/);
+  const bullets = lines.filter(l => /^\s*([-–—•*·▪►✔✓✅➤➔●◆]|\p{Extended_Pictographic})/u.test(l)).length;
+  const paragraphs = raw.split(/\n\s*\n/).filter(p => p.trim()).length;
+  const band = flesch == null ? null : flesch >= 70 ? 'Easy' : flesch >= 50 ? 'Fairly easy' : flesch >= 30 ? 'Hard' : 'Very hard';
+  return { empty: false, words: n, sentences: sCount, avgSentence, flesch, band, bullets, paragraphs, isLatin };
+}
+
+/* ----- metrics reused from the other tabs (no extra API calls) ----- */
+function researchSnapshot() {
+  const rows = {};
+  for (const [k, r] of rs.rows) {
+    rows[k] = { kw: r.kw, source: r.source };
+    for (const s of ['ios', 'android']) if (r[s]) rows[k][s] = { pop: r[s].pop ?? null, difficulty: r[s].difficulty ?? null, opp: r[s].opp ?? null, popSource: r[s].popSource ?? null, error: r[s].error ? true : undefined };
+  }
+  return { country: rs.country, stores: rs.stores, rows };
+}
+function saveResearchResults() {
+  try { localStorage.setItem('rc_research_results', JSON.stringify(researchSnapshot())); } catch (e) { /* ignore */ }
+}
+function anResearch() {
+  if (rs.rows.size) return researchSnapshot();
+  try { const s = JSON.parse(localStorage.getItem('rc_research_results') || 'null'); return s && s.rows ? s : null; } catch (e) { return null; }
+}
+function anMetrics(store, country, kw) {
+  const snap = anResearch();
+  if (!snap || snap.country !== country) return null;
+  const x = (snap.rows[kw.toLowerCase()] || {})[store];
+  if (!x || x.error) return null;
+  return { pop: x.pop ?? null, difficulty: x.difficulty ?? null, opp: x.opp ?? null, popSource: x.popSource || null };
+}
+function anRank(store, country, kw, appId) {
+  const low = kw.toLowerCase();
+  for (const [k, d] of Object.entries(state.data[store] || {})) {
+    const i = k.indexOf('|');
+    if (k.slice(0, i) === country && k.slice(i + 1).toLowerCase() === low && d && !d.error) return { rank: d.rank, scanned: d.scanned, from: 'this session' };
+  }
+  if (appId) {
+    const p = loadLast()[`${store}|${appId}|${country}|${low}`];
+    if (p) return { rank: p.rank, scanned: null, from: 'last check ' + (p.date || '') };
+  }
+  return null;
+}
+function anKeywordRows(store, country) {
+  const id = (an.app[store] && an.app[store].id) || (state.app[store] && state.app[store].id) || null;
+  return an.keywords.map((kw, i) => ({ kw, i, metrics: anMetrics(store, country, kw), rank: anRank(store, country, kw, id) }));
+}
+
+/* ----- analysis ----- */
+const AN_CREDIT = {
+  android: { title: { exact: 1, words: 0.6, partial: 0.3 }, mid: { exact: 0.8, words: 0.5, partial: 0.25 }, long: { exact: 0.5, words: 0.3, partial: 0.15 } },
+  ios: { title: { exact: 1, words: 0.7, partial: 0.35 }, mid: { exact: 0.9, words: 0.6, partial: 0.3 }, kwf: { exact: 0.8, words: 0.75, partial: 0.3 } }
+};
+const anMid = (store, f) => (store === 'ios' ? f.subtitle : f.short);
+
+function anAnalyze(store, f, kwRows) {
+  const L = AN_LIMITS[store], credit = AN_CREDIT[store];
+  const mid = anMid(store, f), kwf = store === 'ios' ? String(f.keywords || '').replace(/,/g, ' ') : '';
+  const all = [f.title, mid, f.long, kwf].join('\n');
+  const indexedStems = new Set(anStemTok([f.title, mid, kwf].join(' ')));
+  const longStats = anReadability(f.long);
+
+  const rows = kwRows.map(k => {
+    const m = { title: anMatch(f.title, k.kw), mid: anMatch(mid, k.kw), long: anMatch(f.long, k.kw) };
+    if (store === 'ios') m.kwf = anMatch(kwf, k.kw);
+    const rel = anRelevance(k.kw, all);
+    let cr = 0;
+    for (const field of Object.keys(credit)) cr = Math.max(cr, credit[field][m[field].type] || 0);
+    if (store === 'ios' && anContent(anStemTok(k.kw)).every(w => indexedStems.has(w))) cr = Math.max(cr, 0.85); // Apple combines words across fields
+    const density = store === 'android' && m.long.total ? (m.long.count * anStemTok(k.kw).length / m.long.total) * 100 : null;
+    return { ...k, m, rel, credit: cr, covered: cr >= 0.5, density, avoided: anHasAvoid(k.kw) };
+  });
+
+  const opps = rows.map(r => r.metrics && r.metrics.opp).filter(v => v != null);
+  const HI = 25;
+  const hiSet = new Set(opps.some(v => v >= HI) ? rows.filter(r => r.metrics && r.metrics.opp >= HI).map(r => r.i)
+    : rows.filter(r => r.metrics && r.metrics.opp != null).sort((a, b) => b.metrics.opp - a.metrics.opp).slice(0, 3).map(r => r.i));
+  rows.forEach(r => { r.highOpp = hiSet.has(r.i); r.rec = anRecommend(store, r); });
+
+  const considered = rows.filter(r => r.rel.level !== 'Low');
+  const w = r => 1 + (r.metrics && r.metrics.opp != null ? r.metrics.opp / 25 : 0);
+  const wSum = considered.reduce((a, r) => a + w(r), 0);
+  const coverage = wSum ? considered.reduce((a, r) => a + w(r) * r.credit, 0) / wSum : null;
+  const coveredCount = considered.filter(r => r.covered).length;
+
+  const A = { store, f, rows, considered, coverage, coveredCount, hiSet, longStats };
+  A.flags = anFlags(store, f, rows);
+  A.rep = anRepetition(store, f, rows);
+  A.parts = anScoreParts(store, A);
+  const avail = A.parts.filter(p => p.pts != null), max = avail.reduce((a, p) => a + p.max, 0);
+  A.total = max ? Math.round(avail.reduce((a, p) => a + p.pts, 0) / max * 100) : null;
+  A.band = A.total == null ? 'N/A' : A.total >= 85 ? 'Strong' : A.total >= 70 ? 'Good' : A.total >= 50 ? 'Needs work' : 'Weak';
+  return A;
+}
+
+function anRecommend(store, r) {
+  const { title, mid, long } = r.m, kwf = r.m.kwf;
+  if (r.avoided) return 'Avoid: contains a trademark or a term you excluded';
+  if (r.rel.level === 'Low') return 'Skip: your listing does not support this keyword';
+  if (store === 'android') {
+    const inT = title.type === 'exact', inM = mid.type === 'exact', inL = long.count > 0;
+    if (long.count > 5) return `Used ${long.count} times in the description: reduce repetition`;
+    if (r.highOpp && !inT && !inM) return 'High opportunity: work it into the title or short description';
+    if (r.highOpp && !inT) return 'High opportunity: consider the exact phrase in the title';
+    if (inT && inM && inL) return 'Well covered';
+    if (inT && !inL) return 'In the title: also mention it naturally in the description';
+    if (inM && !inL) return 'Mention it naturally in the long description';
+    if (!inT && !inM && !inL) return 'Mention it naturally in the long description';
+    return 'Covered';
+  }
+  const inT = title.type === 'exact', inM = mid.type === 'exact', inK = kwf && (kwf.type === 'exact' || kwf.type === 'words');
+  if (r.highOpp && !r.covered) return 'High opportunity: add to the subtitle or keyword field';
+  if (inT || inM) return inK ? 'Also in the keyword field: remove those words to free bytes' : 'Well covered';
+  if (r.covered) return 'Covered by combining title, subtitle and keyword field';
+  if (long.type !== 'none') return 'Only in the description: Apple does not use it for search';
+  return 'Add to the keyword field if space allows';
+}
+
+function anFlags(store, f, rows) {
+  const flags = [], L = AN_LIMITS[store];
+  const add = (level, text) => flags.push({ level, text });
+  const check = (label, v, lim, bytes) => {
+    const n = bytes ? anBytes(v) : anLen(v);
+    if (!String(v || '').trim()) add('warn', `${label} is empty`);
+    else if (n > lim) add('error', `${label} is over the limit by ${n - lim}${bytes ? ' bytes' : ' characters'}`);
+  };
+  check('Title', f.title, L.title);
+  if (store === 'android') { check('Short description', f.short, L.short); } else { check('Subtitle', f.subtitle, L.subtitle); check('Keyword field', f.keywords, L.keywords, true); }
+  check('Description', f.long, L.long);
+  const short = anMid(store, f);
+  if (AN_PROMO.test(f.title) || AN_PROMO.test(short)) add('warn', `Promotional or price wording in the title or ${store === 'ios' ? 'subtitle' : 'short description'} can be rejected by ${store === 'ios' ? 'Apple' : 'Google Play'}`);
+  if (/\p{Extended_Pictographic}/u.test(f.title)) add('warn', 'Emoji in the title: both stores discourage this');
+  if ((f.title.match(/\b[A-Z]{6,}\b/g) || []).length) add('info', 'All-caps words in the title can be flagged');
+  const text = [f.title, short, f.long, f.keywords].join('\n');
+  if (store === 'ios' && AN_PLATFORM.test(text)) add('error', 'Mentions another mobile platform (for example Android). Apple rejects this in metadata');
+  const risky = String(f.long || '').split(/(?<=[.!?])\s+|\n+/).filter(s => AN_RISKY.test(s)).slice(0, 3);
+  if (risky.length || AN_RISKY.test(f.title + ' ' + short)) add('warn', 'Claims to review (superlatives or gambling-style wording): ' + (risky.map(s => '“' + s.slice(0, 70) + (s.length > 70 ? '…' : '') + '”').join(', ') || 'in the title or short text'));
+  if (anHasAvoid(text)) add('warn', 'The text contains a trademark or a term you asked to avoid');
+  const bad = rows.filter(r => r.avoided).map(r => r.kw);
+  if (bad.length) add('warn', 'Keywords to drop: ' + bad.join(', '));
+  if (store === 'ios' && /,\s/.test(f.keywords || '')) add('info', 'The keyword field has spaces after commas, which waste bytes');
+  return flags;
+}
+
+function anRepetition(store, f, rows) {
+  const out = { penalties: [], items: [] };
+  const long = f.long || '', toks = anStemTok(long).filter(w => !AN_STOP.has(w));
+  const counts = new Map(); toks.forEach(w => counts.set(w, (counts.get(w) || 0) + 1));
+  const total = Math.max(anTok(long).length, 1);
+  const top = [...counts.entries()].filter(([, c]) => c >= 6).map(([w, c]) => ({ w, c, d: c / total * 100 })).sort((a, b) => b.c - a.c).slice(0, 5);
+  out.top = top;
+  if (store === 'android') {
+    const heavy = rows.filter(r => r.m.long.count > 5);
+    if (heavy.length) out.penalties.push({ pts: Math.min(9, 3 * heavy.length), why: `keyword phrase used more than 5 times in the description: ${heavy.map(r => r.kw).join(', ')}` });
+    const dense = top.filter(x => x.d >= 3.5 && x.c >= 8);
+    if (dense.length) out.penalties.push({ pts: Math.min(6, 2 * dense.length), why: `single words that dominate the text: ${dense.map(x => x.w).join(', ')}` });
+    const tw = anContent(anStemTok(f.title)), sw = new Set(anStemTok(f.short));
+    if (tw.length && tw.filter(w => sw.has(w)).length / tw.length >= 0.75) out.penalties.push({ pts: 2, why: 'the short description repeats most of the title words' });
+  } else {
+    const places = { title: new Set(anContent(anStemTok(f.title))), subtitle: new Set(anContent(anStemTok(f.subtitle))), keywords: new Set(anStemTok(String(f.keywords || '').replace(/,/g, ' '))) };
+    const seen = new Map();
+    for (const [name, set] of Object.entries(places)) for (const w of set) seen.set(w, [...(seen.get(w) || []), name]);
+    const dup = [...seen.entries()].filter(([, v]) => v.length > 1);
+    out.dups = dup.map(([w, v]) => ({ w, in: v }));
+    if (dup.length) out.penalties.push({ pts: Math.min(9, 1.5 * dup.length), why: `words repeated across title, subtitle and keyword field (wasted space): ${dup.map(([w]) => w).join(', ')}` });
+    const dense = top.filter(x => x.d >= 4 && x.c >= 8);
+    if (dense.length) out.penalties.push({ pts: Math.min(3, dense.length), why: `padding in the description (readability, not a ranking factor): ${dense.map(x => x.w).join(', ')}` });
+  }
+  return out;
+}
+
+function anScoreParts(store, A) {
+  const f = A.f, L = AN_LIMITS[store], rows = A.rows, parts = [];
+  // 1. keyword coverage (30)
+  parts.push(A.coverage == null
+    ? { key: 'coverage', label: 'Keyword coverage', pts: null, max: 30, why: 'N/A: add keywords (and relevant ones) to measure it' }
+    : { key: 'coverage', label: 'Keyword coverage', pts: +(A.coverage * 30).toFixed(1), max: 30, why: `${Math.round(A.coverage * 100)}% weighted coverage; ${A.coveredCount} of ${A.considered.length} relevant keywords sit in ${store === 'ios' ? 'title, subtitle or keyword field' : 'title, short or long description'}` });
+  // 2. relevance (20)
+  if (!rows.length) parts.push({ key: 'relevance', label: 'Relevance', pts: null, max: 20, why: 'N/A: add keywords to measure it' });
+  else {
+    const sc = rows.reduce((a, r) => a + (r.rel.level === 'High' ? 1 : r.rel.level === 'Medium' ? 0.5 : 0), 0) / rows.length;
+    const low = rows.filter(r => r.rel.level === 'Low').length;
+    parts.push({ key: 'relevance', label: 'Relevance', pts: +(sc * 20).toFixed(1), max: 20, why: `${rows.length - low} of ${rows.length} keywords are supported by words already in your listing` });
+  }
+  // 3. metadata limits (15)
+  const spec = store === 'android'
+    ? [['Title', f.title, L.title, 5, 20, false], ['Short description', f.short, L.short, 5, 60, false], ['Description', f.long, L.long, 5, 1500, false]]
+    : [['Title', f.title, L.title, 4, 20, false], ['Subtitle', f.subtitle, L.subtitle, 4, 20, false], ['Keyword field', f.keywords, L.keywords, 4, 90, true], ['Description', f.long, L.long, 3, 1000, false]];
+  let pts = 0, max = 0; const notes = [];
+  for (const [label, v, lim, wt, target, bytes] of spec) {
+    const n = bytes ? anBytes(v) : anLen(v); max += wt;
+    if (!String(v || '').trim()) notes.push(`${label} empty`);
+    else if (n > lim) notes.push(`${label} over by ${n - lim}`);
+    else { pts += wt * (0.5 + 0.5 * Math.min(1, n / target)); }
+  }
+  parts.push({ key: 'limits', label: 'Metadata limits', pts: +pts.toFixed(1), max, why: notes.length ? notes.join('; ') : 'every field is filled and within its limit' });
+  // 4. readability (15)
+  const rd = A.longStats;
+  if (rd.empty) parts.push({ key: 'readability', label: 'Readability', pts: 0, max: 15, why: 'no description to read' });
+  else {
+    const sent = rd.avgSentence <= 18 ? 3 : rd.avgSentence <= 25 ? 2 : 0.5;
+    const struct = (rd.paragraphs >= 3 || rd.bullets >= 3) ? 4 : rd.paragraphs >= 2 ? 2 : 0;
+    let p, why;
+    if (rd.flesch != null) { p = Math.max(0, Math.min(1, (rd.flesch - 20) / 40)) * 8 + sent + struct; why = `Flesch ${rd.flesch} (${rd.band}), ${rd.avgSentence.toFixed(1)} words per sentence, ${rd.paragraphs} paragraphs, ${rd.bullets} bullet lines`; }
+    else { p = (sent + struct) * 15 / 7; why = `${rd.isLatin ? 'text too short for Flesch' : 'Flesch is English-only'}; ${rd.avgSentence.toFixed(1)} words per sentence, ${rd.paragraphs} paragraphs, ${rd.bullets} bullet lines`; }
+    parts.push({ key: 'readability', label: 'Readability', pts: +Math.min(15, p).toFixed(1), max: 15, why });
+  }
+  // 5. repetition (20)
+  const pen = A.rep.penalties.reduce((a, p) => a + p.pts, 0);
+  parts.push({ key: 'repetition', label: 'Repetition', pts: +Math.max(0, 20 - pen).toFixed(1), max: 20, why: A.rep.penalties.length ? A.rep.penalties.map(p => `-${p.pts}: ${p.why}`).join('; ') : 'no stuffing or wasted repeats found' });
+  return parts;
+}
+
+/* ----- generation (only reuses your own wording and your chosen keywords) ----- */
+function anBrandOf(store, f) {
+  if (an.brand.trim()) return an.brand.trim();
+  const seg = String(f.title || '').trim().split(/\s+[-–—|]\s+|\s*:\s*/)[0].trim();
+  return seg || (an.app[store] && an.app[store].name) || '';
+}
+
+function anPriority(rows) {
+  const num = (r, k, d) => (r.metrics && r.metrics[k] != null ? r.metrics[k] : d);
+  return rows.filter(r => r.rel.level !== 'Low' && !r.avoided)
+    .sort((a, b) => (num(b, 'opp', -1) - num(a, 'opp', -1)) || (num(b, 'pop', -1) - num(a, 'pop', -1)) || (num(a, 'difficulty', 101) - num(b, 'difficulty', 101)) || (a.i - b.i));
+}
+
+// Splits the existing description into features (bullets, headings, "Label: detail" lines), rules and paragraphs.
+function anParse(text, brand) {
+  const feats = [], paras = [], rules = []; let sawFirst = false;
+  const GENERIC = /^(key features|features|download|join|about|how to play|classic .* gameplay)\b/i;
+  const RULE = /^the (goal|twist|title|challenge|rules?)\b/i;
+  for (let line of String(text || '').replace(/\r/g, '').split('\n')) {
+    line = line.trim(); if (!line) continue;
+    const bulleted = /^([-–—•*·▪►✔✓✅➤➔●◆]|\p{Extended_Pictographic})/u.test(line);
+    let clean = line;
+    for (let i = 0; i < 3; i++) clean = clean.replace(/^[\s\-–—•*·▪►✔✓✅➤➔●◆\uFE0F]+/u, '').replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, '');
+    clean = clean.trim(); if (!clean) continue;
+    if (!sawFirst) { sawFirst = true; if (!bulleted && (clean.includes(':') || (clean.length <= 90 && !/[.]$/.test(clean)))) continue; } // headline, not a feature
+    const ld = clean.match(/^([^:.!?]{2,45}):\s*(.+)$/);
+    if (ld) { (RULE.test(ld[1]) ? rules : feats).push(RULE.test(ld[1]) ? clean : { label: ld[1].trim(), detail: ld[2].trim() }); continue; }
+    const head = clean.replace(/[!:.]+$/, '').trim();
+    if (clean.endsWith(':') || GENERIC.test(head)) continue;
+    if ((bulleted || (clean.length <= 60 && !/[.]$/.test(clean))) && head.length <= 60) { feats.push({ label: head, detail: '' }); continue; }
+    paras.push(clean);
+  }
+  const seen = new Set();
+  const uniq = feats.filter(x => { const k = anStemTok(x.label).join(' '); if (seen.has(k)) return false; seen.add(k); return true; });
+  return { feats: uniq, paras, rules };
+}
+
+function anFeaturePhrases(parsed, prior, brand) {
+  const bs = new Set(anStemTok(brand)), want = new Map();
+  prior.forEach((r, i) => anContent(anStemTok(r.kw)).forEach(w => { if (!want.has(w)) want.set(w, prior.length - i); }));
+  const out = [], seen = new Set();
+  for (const f of parsed.feats) {
+    for (const part of f.label.split(/\s+(?:&|and)\s+/i)) {
+      const toks = part.trim().split(/\s+/).filter(Boolean);
+      if (!toks.length || toks.length > 5 || AN_RISKY.test(part) || anHasAvoid(part) || AN_PLATFORM.test(part)) continue;
+      const phrase = toks.map(w => (/^[A-Z0-9]{2,}$/.test(w) || bs.has(anStem(w.toLowerCase())) ? w : w.toLowerCase())).join(' ');
+      const key = anStemTok(phrase).join(' ');
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      const score = anStemTok(phrase).reduce((a, w) => a + (want.get(w) || 0), 0);
+      out.push({ phrase, score, len: phrase.length });
+    }
+  }
+  return out.sort((a, b) => (b.score - a.score) || (a.len - b.len)).map(x => x.phrase);
+}
+
+function anTitleOptions(store, brand, prior) {
+  const limit = AN_LIMITS[store].title, bs = new Set(anStemTok(brand));
+  if (!brand) return [];
+  const descs = [], seen = new Set();
+  for (const r of prior) {
+    const words = r.kw.trim().split(/\s+/).filter(w => !bs.has(anStem(anNorm(w))));
+    const all = r.kw.trim().split(/\s+/).length;
+    if (!words.length || (words.length < all && words.length < 2)) continue; // the brand already covers it
+    const text = anTitleCase(words.join(' '));
+    if (!seen.has(text.toLowerCase())) { seen.add(text.toLowerCase()); descs.push(text); }
+  }
+  const fits = d => d && anLen(brand) + 2 + anLen(d) <= limit;
+  const usable = descs.filter(fits);
+  const pool = [];
+  if (usable[0]) pool.push(`${brand}: ${usable[0]}`);
+  if (usable[1]) pool.push(`${brand} - ${usable[1]}`);
+  const short = descs.filter(d => anLen(d) <= 12).slice(0, 4);
+  for (let i = 0; i < short.length; i++) for (let j = i + 1; j < short.length; j++) { const c = `${short[i]} & ${short[j]}`; if (fits(c)) pool.push(`${brand}: ${c}`); }
+  if (usable[2]) pool.push(`${brand}: ${usable[2]}`);
+  if (usable[0]) pool.push(`${brand} ${usable[0]}`);
+  const out = [];
+  for (const t of pool) if (anLen(t) <= limit && !out.some(o => o.toLowerCase() === t.toLowerCase())) out.push(t);
+  return out.slice(0, 3);
+}
+
+function anDistinct(feats, used) {
+  const stems = p => new Set(anContent(anStemTok(p))), out = [];
+  for (const f of feats) {
+    const sf = stems(f); if (!sf.size) continue;
+    const inside = (a, b) => [...a].every(w => b.has(w));
+    if (used.some(u => [...sf].some(w => stems(u).has(w)))) continue;          // a keyword in the sentence already uses these words
+    if (out.some(o => inside(sf, stems(o)) || inside(stems(o), sf))) continue; // near-duplicate of a feature already kept
+    out.push(f);
+  }
+  return out;
+}
+
+function anMidOptions(store, prior, feats, titleText, brand) {
+  const limit = store === 'ios' ? AN_LIMITS.ios.subtitle : AN_LIMITS.android.short;
+  const titleStems = new Set(anStemTok(titleText));
+  const fresh = prior.filter(r => !anContent(anStemTok(r.kw)).every(w => titleStems.has(w)));
+  const ordered = [...fresh, ...prior.filter(r => !fresh.includes(r))];
+  const opts = [];
+  const push = t => { t = t.replace(/\s+/g, ' ').trim(); if (t && anLen(t) <= limit && !opts.some(o => o.toLowerCase() === t.toLowerCase())) opts.push(t); };
+  if (store === 'ios') {
+    const phr = ordered.map(r => anTitleCase(r.kw.trim().split(/\s+/).filter(w => !titleStems.has(anStem(anNorm(w)))).join(' '))).filter(Boolean);
+    const frag = k => { const n = k.trim().split(/\s+/).length; return anTitleCase(k.trim().split(/\s+/).filter(w => !titleStems.has(anStem(anNorm(w)))).join(' ')).split(' ').length < Math.min(n, 2) ? 1 : 0; };
+    const u = [...new Set(phr)].map((t, i) => ({ t, f: frag(ordered[i].kw) })).sort((a, b) => a.f - b.f).map(x => x.t);
+    const featT = feats.slice(0, 2).map(anTitleCase);
+    const disjoint = (a, b) => { const sa = new Set(anContent(anStemTok(a))); return anContent(anStemTok(b)).every(w => !sa.has(w)); };
+    const pair = (a, b) => (a && b && disjoint(a, b) ? `${a} & ${b}` : false);
+    const seq = [u[0], pair(u[0], u[1]), u[1], featT.length === 2 && pair(featT[0], featT[1]), u[2], pair(u[0], u[2]), featT[0]];
+    seq.forEach(t => t && push(t));
+    return opts.slice(0, 3);
+  }
+  const K = ordered.map(r => r.kw.trim());
+  const fitList = (build, list) => { for (let n = list.length; n >= 1; n--) { const t = build(list.slice(0, n)); if (anLen(t) <= limit) return t; } return ''; };
+  if (!K.length) return [];
+  if (feats.length) {
+    const fA = anDistinct(feats, [K[0]]), fB = anDistinct(feats, [K[1] || K[0]]), fC = anDistinct(feats, K.slice(0, 2));
+    if (fA.length) push(fitList(F => `${anCap(K[0])} with ${anList(F)}.`, fA.slice(0, 3)));
+    if (fB.length) push(fitList(F => `${anCap(K[1] || K[0])}: ${anList(F)}.`, fB.length > 2 ? fB.slice(1, 4) : fB.slice(0, 2)));
+    if (K[1] && fC.length) push(fitList(F => `${anCap(K[0])} and ${K[1]}, with ${anList(F)}.`, fC.slice(0, 2)));
+    if (fA.length) push(fitList(F => `${anCap(K[0])}: ${anList(F)}.`, fA.slice(0, 3)));
+  }
+  if (opts.length < 3) push(`${anCap(anList(K.slice(0, 3)))}.`);
+  if (opts.length < 3 && K[1]) push(`${anCap(K[0])} and ${K[1]}.`);
+  return opts.slice(0, 3);
+}
+
+function anKeywordField(prior, usedStems) {
+  const used = new Set(usedStems), out = []; let bytes = 0;
+  for (const r of prior) for (const w of anTok(r.kw)) {
+    const st = anStem(w);
+    if (used.has(st) || AN_STOP.has(w) || w.length < 2 || /^\d+$/.test(w)) continue;
+    const add = (out.length ? 1 : 0) + anBytes(w);
+    if (bytes + add > AN_LIMITS.ios.keywords) continue;
+    out.push(w); used.add(st); bytes += add;
+  }
+  return out.join(',');
+}
+
+function anLongDesc(store, f, parsed, prior, brand, midText) {
+  const sentences = p => p.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+  const ok = s => !AN_RISKY.test(s) && !anHasAvoid(s) && !(store === 'ios' && AN_PLATFORM.test(s));
+  const intro = [];
+  for (const p of parsed.paras) { for (const s of sentences(p)) if (ok(s) && intro.length < 3) intro.push(s); if (intro.length >= 3) break; }
+  if (!intro.length && midText) intro.push(/[.!?]$/.test(midText) ? midText : midText + '.');
+  const out = [];
+  if (intro.length) out.push(intro.join(' '));
+  if (store === 'android') {
+    const introStems = anStemTok(intro.join(' ')).join(' ');
+    const add = prior.filter(r => r.rel.level === 'High' && !introStems.includes(anStemTok(r.kw).join(' '))).slice(0, 3).map(r => r.kw.trim());
+    if (add.length >= 2) out.push(`${brand || 'This app'} brings together ${anList(add)}.`);
+  }
+  const bullets = parsed.feats.filter(x => ok(x.label) && ok(x.detail || '') && !AN_PLATFORM.test(x.label)).map(x => `• ${x.label}${x.detail ? ': ' + x.detail : ''}`);
+  const rules = parsed.rules.filter(ok);
+  const rest = parsed.paras.filter(p => !intro.some(s => p.includes(s))).map(p => sentences(p).filter(ok).join(' ')).filter(Boolean);
+  const cta = rest.length && /^(download|join|play|install|start)\b/i.test(rest[rest.length - 1]) ? rest.pop() : '';
+  const build = n => {
+    const parts = [...out];
+    if (bullets.length) parts.push('Features\n' + bullets.slice(0, n).join('\n'));
+    if (rules.length) parts.push('How to play\n' + rules.join('\n'));
+    if (rest.length) parts.push(rest.join('\n\n'));
+    if (cta) parts.push(cta);
+    return parts.join('\n\n');
+  };
+  let n = bullets.length, text = build(n);
+  while (anLen(text) > AN_LIMITS[store].long && n > 0) { n--; text = build(n); }
+  if (anLen(text) > AN_LIMITS[store].long) text = [...text].slice(0, AN_LIMITS[store].long).join('');
+  return { text, notes: [] };
+}
+
+function anGenerate(store, A) {
+  const f = A.f, brand = anBrandOf(store, f), prior = anPriority(A.rows);
+  const parsed = anParse(f.long, brand);
+  const feats = anFeaturePhrases(parsed, prior, brand);
+  const titles = anTitleOptions(store, brand, prior);
+  const ti = Math.min(an.sel.title, Math.max(titles.length - 1, 0));
+  const titleText = titles.length ? titles[ti] : f.title;
+  const mids = anMidOptions(store, prior, feats, titleText, brand);
+  const mi = Math.min(an.sel.mid, Math.max(mids.length - 1, 0));
+  const midText = mids.length ? mids[mi] : anMid(store, f);
+  const G = { brand, titles, mids, ti, mi, feats, prior };
+  if (store === 'ios') {
+    const used = [...anStemTok(titleText), ...anStemTok(midText)];
+    G.kwfield = anKeywordField(prior, used);
+  }
+  G.long = anLongDesc(store, f, parsed, prior, brand, midText);
+  G.after = store === 'ios'
+    ? { title: titleText, subtitle: midText, keywords: G.kwfield, long: G.long.text }
+    : { title: titleText, short: midText, long: G.long.text };
+  return G;
+}
+
+/* ----- storage ----- */
+function anSnapshot(L) {
+  return {
+    store: L.store, country: L.country, at: L.at,
+    score: { before: L.A.total, after: L.A2.total }, parts: L.A.parts,
+    coverage: { before: L.A.coverage, after: L.A2.coverage },
+    options: { titles: L.G.titles, mids: L.G.mids, keywords: L.G.kwfield ?? null, long: L.G.long.text },
+    table: L.A.rows.map(r => ({ keyword: r.kw, popularity: r.metrics ? r.metrics.pop : null, difficulty: r.metrics ? r.metrics.difficulty : null, opportunity: r.metrics ? r.metrics.opp : null, relevance: r.rel.level, recommendation: r.rec }))
+  };
+}
+function anSave() {
+  try {
+    localStorage.setItem(AN_KEY, JSON.stringify({ store: an.store, country: an.country, src: an.src, app: an.app, fields: an.fields, keywords: an.keywords, brand: an.brand, avoid: an.avoid, sel: an.sel, result: an.last ? anSnapshot(an.last) : null }));
+  } catch (e) { /* storage may be unavailable */ }
+}
+function anLoad() {
+  try {
+    const s = JSON.parse(localStorage.getItem(AN_KEY) || 'null');
+    if (!s) return false;
+    if (s.store === 'ios' || s.store === 'android') an.store = s.store;
+    if (typeof s.country === 'string' && CNAME[s.country]) an.country = s.country;
+    for (const k of ['android', 'ios']) {
+      if (s.src && typeof s.src[k] === 'string') an.src[k] = s.src[k];
+      if (s.app && s.app[k] && typeof s.app[k].id === 'string') an.app[k] = s.app[k];
+      for (const key of Object.keys(an.fields[k])) if (s.fields && s.fields[k] && typeof s.fields[k][key] === 'string') an.fields[k][key] = s.fields[k][key];
+    }
+    if (Array.isArray(s.keywords)) an.keywords = s.keywords.filter(x => typeof x === 'string').slice(0, 50);
+    if (typeof s.brand === 'string') an.brand = s.brand;
+    if (typeof s.avoid === 'string') an.avoid = s.avoid;
+    if (s.sel) an.sel = { title: Math.max(0, +s.sel.title || 0), mid: Math.max(0, +s.sel.mid || 0) };
+    return !!s.result;
+  } catch (e) { return false; }
+}
+
+/* ----- fields, counters, keywords ----- */
+const anFieldKey = id => (id === 'mid' ? (an.store === 'ios' ? 'subtitle' : 'short') : id === 'kwf' ? 'keywords' : id);
+const anFieldId = key => (key === 'subtitle' || key === 'short' ? 'mid' : key === 'keywords' ? 'kwf' : key);
+const anLimitOf = (store, key) => AN_LIMITS[store][key];
+
+function anCounterText(store, key, value) {
+  const bytes = key === 'keywords', n = bytes ? anBytes(value) : anLen(value), lim = anLimitOf(store, key);
+  return { n, lim, over: n > lim, text: `${n} / ${lim}${bytes ? ' bytes' : ''}${n > lim ? `, over by ${n - lim}` : ''}` };
+}
+function anUpdateCounters() {
+  const store = an.store, f = an.fields[store];
+  for (const key of Object.keys(f)) {
+    const id = anFieldId(key), c = anCounterText(store, key, f[key]), el = $('#an-' + id + '-count');
+    el.textContent = c.text; el.classList.toggle('over', c.over);
+    $('#an-' + id + '-trim').hidden = !c.over;
+  }
+}
+function anTrim(id) {
+  const key = anFieldKey(id), f = an.fields[an.store], lim = anLimitOf(an.store, key);
+  if (key === 'keywords') { const p = f.keywords.split(','); while (p.length && anBytes(p.join(',')) > lim) p.pop(); f.keywords = p.join(','); }
+  else f[key] = [...f[key]].slice(0, lim).join('').trimEnd();
+  anSyncFields(); anSave();
+}
+function anSyncFields() {
+  const store = an.store, f = an.fields[store], ios = store === 'ios';
+  $('#an-store-android').checked = !ios; $('#an-store-ios').checked = ios;
+  $('#an-title').value = f.title; $('#an-mid').value = ios ? f.subtitle : f.short; $('#an-long').value = f.long;
+  $('#an-kwf').value = ios ? f.keywords : '';
+  $('#an-mid-label').textContent = ios ? 'Subtitle' : 'Short description';
+  $('#an-kwf-wrap').hidden = !ios;
+  $('#an-src').value = an.src[store];
+  $('#an-src').placeholder = ios ? 'https://apps.apple.com/us/app/…/id123456789, or just the ID' : 'https://play.google.com/store/apps/details?id=…, or the package name';
+  $('#an-country').value = an.country; $('#an-brand').value = an.brand; $('#an-avoid').value = an.avoid;
+  const sel = state.app[store];
+  $('#an-use-app').hidden = !sel; if (sel) $('#an-use-app').textContent = `Use ${sel.name && sel.name !== sel.id ? sel.name : 'selected app'}`;
+  anUpdateCounters(); anRenderChips(); anMetricsNote();
+  $('#an-results').hidden = !(an.last && an.last.store === store);
+  $('#an-export-csv').hidden = $('#an-export-txt').hidden = $('#an-results').hidden;
+}
+function anRenderChips() {
+  $('#an-chips').innerHTML = an.keywords.map((k, i) => `<span class="chip">${esc(k)} <button type="button" class="link x" data-i="${i}" aria-label="Remove ${esc(k)}">×</button></span>`).join('');
+}
+function anAddKeywords(text) {
+  text.split(/[\n,]+/).map(x => x.trim().replace(/\s+/g, ' ')).filter(Boolean).forEach(k => {
+    if (an.keywords.length < 50 && !an.keywords.some(x => x.toLowerCase() === k.toLowerCase())) an.keywords.push(k.slice(0, 100));
+  });
+  anRenderChips(); anMetricsNote(); anSave();
+}
+function anResearchKeywords() {
+  const snap = anResearch(), out = [];
+  if (snap) Object.values(snap.rows).sort((a, b) => {
+    const o = r => Math.max(-1, ...['ios', 'android'].map(s => (r[s] && r[s].opp != null ? r[s].opp : -1)));
+    return o(b) - o(a);
+  }).forEach(r => out.push(r.kw));
+  return out;
+}
+function anImportResearch() { anAddKeywords(anResearchKeywords().slice(0, 30).join(',')); }
+function anImportRank() { anAddKeywords(state.keywords.join(',')); }
+function anMetricsNote() {
+  const snap = anResearch(), store = an.store, el = $('#an-metrics-note');
+  let msg;
+  if (!snap) msg = 'No Keyword research results yet. Popularity, difficulty and opportunity will show N/A until you run it.';
+  else if (snap.country !== an.country) msg = `Your Keyword research ran for ${CNAME[snap.country] || snap.country}. Choose that country to use its metrics, or the columns show N/A.`;
+  else if (!(snap.stores || []).includes(store)) msg = `Your Keyword research did not include the ${STORE_LABEL[store]}. Metrics show N/A.`;
+  else { const n = an.keywords.filter(k => anMetrics(store, an.country, k)).length; msg = `Using Keyword research for ${STORE_LABEL[store]} in ${CNAME[an.country]}: metrics found for ${n} of ${an.keywords.length} keywords. Others show N/A.`; }
+  el.textContent = msg;
+}
+
+/* ----- fetch a public listing ----- */
+function anParseSource(text) {
+  const t = String(text || '').trim();
+  let store = null, id = '', country = null, m;
+  if (/apps\.apple\.com|itunes\.apple\.com/i.test(t)) store = 'ios'; else if (/play\.google\.com/i.test(t)) store = 'android';
+  if ((store || an.store) === 'ios') { m = t.match(/\bid(\d{4,15})\b/) || t.match(/^(\d{4,15})$/); id = m ? m[1] : ''; const c = t.match(/apple\.com\/([a-z]{2})\//i); if (c && CNAME[c[1].toLowerCase()]) country = c[1].toLowerCase(); }
+  else { m = t.match(/[?&]id=([A-Za-z]\w*(?:\.[A-Za-z_]\w*)+)/) || t.match(/^([A-Za-z]\w*(?:\.[A-Za-z_]\w*)+)$/); id = m ? m[1] : ''; const c = t.match(/[?&]gl=([a-z]{2})/i); if (c && CNAME[c[1].toLowerCase()]) country = c[1].toLowerCase(); }
+  return { store, id, country };
+}
+const anListingBase = () => state.proxy.trim().replace(/\/+$/, '');
+async function anLookupIos(id, country) {
+  const data = await throttled('ios', () => jsonp(`https://itunes.apple.com/lookup?id=${id}&country=${country}`));
+  const r = (data.results || [])[0];
+  if (!r) throw new Error("App not found in that country's App Store");
+  return { title: r.trackName || '', subtitle: null, description: r.description || '', developer: r.sellerName || '', icon: r.artworkUrl100 || '' };
+}
+async function anFetch() {
+  const st = $('#an-fetch-status'), parsed = anParseSource($('#an-src').value);
+  if (parsed.store && parsed.store !== an.store) { an.store = parsed.store; }
+  if (parsed.country) an.country = parsed.country;
+  const store = an.store; an.src[store] = $('#an-src').value.trim();
+  if (!parsed.id) { anSyncFields(); st.textContent = `Paste a ${STORE_LABEL[store]} URL or ${store === 'ios' ? 'numeric app ID' : 'package name'}.`; st.classList.add('err'); return; }
+  anSyncFields(); st.classList.remove('err'); st.textContent = 'Fetching the public listing…';
+  let L = null, err = null;
+  if (anListingBase()) { try { L = (await api(`${anListingBase()}/api/listing?store=${store}&id=${encodeURIComponent(parsed.id)}&country=${an.country}`)).listing; } catch (e) { err = e; if (e.auth) { st.textContent = 'Access key required.'; return; } } }
+  if (!L && store === 'ios') { try { L = await anLookupIos(parsed.id, an.country); err = null; } catch (e) { err = err || e; } }
+  if (!L) { st.classList.add('err'); st.textContent = `Could not fetch the listing (${err ? err.message : 'no proxy set'}). Type or paste the text below instead.`; return; }
+  const f = an.fields[store];
+  f.title = L.title || f.title;
+  if (store === 'ios') { if (L.subtitle) f.subtitle = L.subtitle; f.long = L.description || f.long; }
+  else { f.short = L.short || f.short; f.long = L.description || f.long; }
+  an.app[store] = { id: parsed.id, name: L.title || parsed.id, developer: L.developer || '' };
+  const missing = store === 'ios' ? [!L.subtitle && 'the subtitle', 'the keyword field'].filter(Boolean) : [!L.short && 'the short description'].filter(Boolean);
+  st.textContent = `Loaded “${L.title}”.` + (missing.length ? ` Not available publicly: ${missing.join(' and ')}. Type ${missing.length > 1 ? 'them' : 'it'} in below.` : '');
+  anSyncFields(); anSave();
+}
+
+/* ----- rendering ----- */
+const anMatchPill = (m, muted) => {
+  const label = { exact: 'Exact', words: 'Words', partial: 'Partial', none: '—' }[m.type];
+  const cls = muted ? (m.type === 'none' ? 'r-none' : 'r-low') : { exact: 'r-top', words: 'r-good', partial: 'r-mid', none: 'r-none' }[m.type];
+  return `<span class="pill ${cls}"${m.type === 'partial' ? ` title="${m.present} of ${m.need} words"` : ''}>${label}</span>`;
+};
+const anNA = '<span class="pill r-none">N/A</span>';
+const anPill = (v, cls) => (v == null ? anNA : `<span class="pill ${cls(v)}">${v}</span>`);
+
+function anHighlight(text, rows, field) {
+  const src = String(text || '');
+  if (!src) return '<span class="hint">(empty)</span>';
+  const strong = [], soft = [];
+  const phrases = rows.filter(r => !r.avoided).map(r => ({ toks: anTok(r.kw), r })).filter(x => x.toks.length).sort((a, b) => b.toks.join(' ').length - a.toks.join(' ').length);
+  const wre = w => anEscRe(w) + '(?:s|es)?';
+  for (const { toks, r } of phrases) {
+    const re = new RegExp('(?<![\\p{L}\\p{N}])' + toks.map(wre).join('[^\\p{L}\\p{N}]+') + '(?![\\p{L}\\p{N}])', 'giu');
+    for (const m of src.matchAll(re)) strong.push([m.index, m.index + m[0].length]);
+    const t = r.m[field] && r.m[field].type;
+    if (t === 'words' || t === 'partial') for (const w of anContent(toks)) {
+      if (w.length < 3) continue;
+      const wr = new RegExp('(?<![\\p{L}\\p{N}])' + wre(w) + '(?![\\p{L}\\p{N}])', 'giu');
+      for (const m of src.matchAll(wr)) soft.push([m.index, m.index + m[0].length]);
+    }
+  }
+  const taken = [];
+  const free = (a, b) => !taken.some(([x, y]) => a < y && b > x);
+  const marks = [];
+  for (const [a, b] of strong.sort((p, q) => (q[1] - q[0]) - (p[1] - p[0]))) if (free(a, b)) { taken.push([a, b]); marks.push([a, b, 'k']); }
+  for (const [a, b] of soft) if (free(a, b)) { taken.push([a, b]); marks.push([a, b, 'soft']); }
+  marks.sort((p, q) => p[0] - q[0]);
+  let out = '', pos = 0;
+  for (const [a, b, c] of marks) { out += esc(src.slice(pos, a)) + `<mark class="${c}">${esc(src.slice(a, b))}</mark>`; pos = b; }
+  return out + esc(src.slice(pos));
+}
+
+function anScoreCard(A, A2) {
+  const parts = A.parts.map(p => `<tr><td>${esc(p.label)}</td><td class="n">${p.pts == null ? 'N/A' : p.pts}</td><td class="n">${p.max}</td><td class="why">${esc(p.why)}</td></tr>`).join('');
+  return `<section class="card"><div class="res-head"><h2>ASO optimization score</h2><span class="sum">Heuristic, not an official store score</span></div>
+    <div class="score-row"><div class="score-num">${A.total ?? 'N/A'}${A.total == null ? '' : '<small> / 100</small>'}</div>
+    <div class="score-meta"><div class="meter" role="img" aria-label="Score ${A.total ?? 'not available'} out of 100"><span style="width:${A.total || 0}%"></span></div>
+    <p>${esc(A.band)}${A2.total != null ? `. The suggested copy below scores ${A2.total}.` : ''}</p></div></div>
+    <div class="scroll"><table class="parts"><thead><tr><th scope="col">Component</th><th scope="col">Points</th><th scope="col">Max</th><th scope="col">Why</th></tr></thead><tbody>${parts}</tbody></table></div>
+    <p class="hint">Rules are fixed and computed in your browser: keyword coverage 30, relevance 20, metadata limits 15, readability 15, repetition 20. Components without data show N/A and are left out of the total. Apple descriptions count toward readability only; keyword density in an Apple description is not treated as a search-ranking factor.</p></section>`;
+}
+function anFlagsCard(A) {
+  if (!A.flags.length) return '<section class="card"><div class="res-head"><h2>Checks</h2></div><p class="hint" style="margin:0">No limit, wording or policy problems found.</p></section>';
+  const icon = { error: 'Fix', warn: 'Check', info: 'Note' };
+  return `<section class="card"><div class="res-head"><h2>Checks</h2></div><ul class="flags">${A.flags.map(f => `<li><span class="pill ${f.level === 'error' ? 'r-err-bg' : f.level === 'warn' ? 'r-mid' : 'r-low'}">${icon[f.level]}</span> ${esc(f.text)}</li>`).join('')}</ul></section>`;
+}
+function anTableCard(A) {
+  const ios = A.store === 'ios';
+  const head = ['Keyword', 'Popularity', 'Difficulty', 'Opportunity', 'Current rank', 'Title', ios ? 'Subtitle' : 'Short description', ...(ios ? ['Keyword field'] : []), ios ? 'Description (not indexed)' : 'Long description', 'Relevance', 'Recommendation'];
+  const rows = [...A.rows].sort((a, b) => ((b.metrics && b.metrics.opp != null ? b.metrics.opp : -1) - (a.metrics && a.metrics.opp != null ? a.metrics.opp : -1)) || a.i - b.i).map(r => {
+    const mt = r.metrics || {};
+    const rank = !r.rank ? anNA : r.rank.rank == null ? `<span class="pill r-none" title="Not found in the results checked (${esc(r.rank.from)})">—</span>` : `<span class="pill ${r.rank.rank <= 3 ? 'r-top' : r.rank.rank <= 10 ? 'r-good' : r.rank.rank <= 50 ? 'r-mid' : 'r-low'}" title="${esc(r.rank.from)}">${r.rank.rank}</span>`;
+    const longSub = r.m.long.count ? `<small class="tier">${r.m.long.count}×${r.density != null ? ' · ' + r.density.toFixed(1) + '%' : ''}</small>` : '';
+    return `<tr><td title="${esc(r.kw)}">${esc(r.kw)}${r.highOpp ? ' <small class="tier">high opportunity</small>' : ''}</td>` +
+      `<td>${anPill(mt.pop, popClass)}</td><td>${anPill(mt.difficulty, diffClass)}</td><td>${anPill(mt.opp, popClass)}</td><td>${rank}</td>` +
+      `<td>${anMatchPill(r.m.title)}</td><td>${anMatchPill(r.m.mid)}</td>${ios ? `<td>${anMatchPill(r.m.kwf)}</td>` : ''}` +
+      `<td>${anMatchPill(r.m.long, ios)}${longSub}</td><td><span class="rel rel-${r.rel.level}">${r.rel.level}</span></td><td class="rec">${esc(r.rec)}</td></tr>`;
+  }).join('');
+  const body = A.rows.length ? `<div class="scroll"><table class="kwt"><thead><tr>${head.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="hint" style="margin:0">Add keywords above to compare them with your listing.</p>';
+  const hiNote = A.hiSet.size ? 'High opportunity means opportunity of 25 or more, or the top 3 if none reach 25.' : 'Run Keyword research for this store and country to find high-opportunity keywords.';
+  return `<section class="card"><div class="res-head"><h2>Keyword comparison</h2><span class="sum">Exact = the phrase appears, Words = all words appear, Partial = some words</span></div>${body}<p class="hint">${hiNote} N/A means the value was not available, not zero. Current rank comes from your Rank check for the app selected there.${ios ? ' Apple does not use the description for search, so that column is shown for context only.' : ''}</p></section>`;
+}
+function anHighlightCard(A) {
+  const ios = A.store === 'ios', f = A.f;
+  const blocks = [['Title', f.title, 'title', 'title'], [ios ? 'Subtitle' : 'Short description', anMid(A.store, f), 'mid', ios ? 'subtitle' : 'short']];
+  if (ios) blocks.push(['Keyword field', f.keywords, 'kwf', 'keywords']);
+  blocks.push([ios ? 'Description' : 'Long description', f.long, 'long', 'long']);
+  return `<section class="card"><div class="res-head"><h2>Keywords in your text</h2><span class="sum"><mark class="k">exact phrase</mark> <mark class="soft">some of the words</mark></span></div>` +
+    blocks.map(([label, text, field, key]) => `<h3 class="hl-h">${label} <span class="counter${anCounterText(A.store, key, text).over ? ' over' : ''}">${anCounterText(A.store, key, text).text}</span></h3><div class="hl">${anHighlight(text, A.rows, field)}</div>`).join('') + '</section>';
+}
+function anStatsCard(A) {
+  const rd = A.longStats, ios = A.store === 'ios';
+  const read = rd.empty ? '<li>No description to analyze.</li>' : `<li>${rd.words} words, ${rd.sentences} sentences, ${rd.avgSentence.toFixed(1)} words per sentence</li><li>Flesch reading ease: ${rd.flesch == null ? 'N/A (English text of 30+ words needed)' : `${rd.flesch} (${rd.band})`}</li><li>${rd.paragraphs} paragraphs, ${rd.bullets} bullet lines</li>`;
+  const rep = A.rep, top = (rep.top || []).map(x => `${esc(x.w)} ×${x.c} (${x.d.toFixed(1)}%)`).join(', ');
+  const repLines = [top ? `<li>Most repeated words: ${top}</li>` : '<li>No word is repeated 6 or more times.</li>'];
+  if (ios) repLines.push(rep.dups && rep.dups.length ? `<li>Repeated across title, subtitle and keyword field: ${rep.dups.map(d => `${esc(d.w)} (${d.in.join(', ')})`).join('; ')}</li>` : '<li>No words are repeated across title, subtitle and keyword field.</li>');
+  return `<section class="card"><div class="res-head"><h2>Readability and repetition</h2>${ios ? '<span class="sum">Apple description: conversion copy, not a ranking factor</span>' : ''}</div><ul class="stats">${read}${repLines.join('')}</ul></section>`;
+}
+function anOptRows(name, items, sel, store, key) {
+  if (!items.length) return '<p class="hint" style="margin:0">Add relevant keywords (and a brand name) to generate options.</p>';
+  return items.map((t, i) => { const c = anCounterText(store, key, t); return `<div class="opt-row"><label class="opt-pick"><input type="radio" name="${name}" value="${i}"${i === sel ? ' checked' : ''}><span class="opt-text">${esc(t)}</span></label><span class="counter${c.over ? ' over' : ''}">${c.text}</span><button type="button" class="link copy" data-copy="${esc(t)}">Copy</button></div>`; }).join('');
+}
+function anOptionsCard(A, G) {
+  const ios = A.store === 'ios', midKey = ios ? 'subtitle' : 'short';
+  let html = `<section class="card"><div class="res-head"><h2>Suggested copy</h2><span class="sum">Built only from your own wording and keywords. Review before using.</span></div>`;
+  html += `<h3 class="hl-h">Title options <span class="sum">brand kept: ${esc(G.brand || 'N/A')}</span></h3>${anOptRows('an-sel-title', G.titles, G.ti, A.store, 'title')}`;
+  html += `<h3 class="hl-h">${ios ? 'Subtitle' : 'Short description'} options</h3>${anOptRows('an-sel-mid', G.mids, G.mi, A.store, midKey)}`;
+  if (ios) { const c = anCounterText('ios', 'keywords', G.kwfield || ''); html += `<h3 class="hl-h">Keyword field <span class="sum">no spaces, words already in the title and subtitle left out</span></h3>` + (G.kwfield ? `<div class="opt-row"><span class="opt-text mono">${esc(G.kwfield)}</span><span class="counter${c.over ? ' over' : ''}">${c.text}</span><button type="button" class="link copy" data-copy="${esc(G.kwfield)}">Copy</button></div>` : '<p class="hint" style="margin:0">No relevant keywords to add.</p>'); }
+  const lc = anCounterText(A.store, 'long', G.long.text);
+  html += `<h3 class="hl-h">Improved ${ios ? 'description' : 'long description'} <span class="counter${lc.over ? ' over' : ''}">${lc.text}</span> <button type="button" class="link copy" data-copy-from="#an-long-out">Copy</button></h3>` +
+    (G.long.text ? `<textarea id="an-long-out" rows="12" readonly aria-label="Improved description">${esc(G.long.text)}</textarea>` : '<p class="hint" style="margin:0">Add a description so it can be restructured.</p>');
+  return html + '</section>';
+}
+function anBaCard(A, G, A2) {
+  const ios = A.store === 'ios', f = A.f, g = G.after;
+  const fields = [['Title', 'title', f.title, g.title]];
+  fields.push([ios ? 'Subtitle' : 'Short description', ios ? 'subtitle' : 'short', anMid(A.store, f), anMid(A.store, g)]);
+  if (ios) fields.push(['Keyword field', 'keywords', f.keywords, g.keywords]);
+  const col = (label, store, key, text, cls) => { const c = anCounterText(store, key, text); return `<div class="ba-col ${cls}"><h4>${label}</h4><p class="ba-text">${text ? esc(text) : '<span class="hint">(empty)</span>'}</p><span class="counter${c.over ? ' over' : ''}">${c.text}</span></div>`; };
+  const pairs = fields.map(([label, key, b, a]) => `<h3 class="hl-h">${label}</h3><div class="ba">${col('Before', A.store, key, b, 'before')}${col('After', A.store, key, a, 'after')}</div>`).join('');
+  const newly = A2.rows.filter((r, i) => r.covered && !A.rows[i].covered && r.rel.level !== 'Low').map(r => r.kw);
+  const pct = v => (v == null ? 'N/A' : Math.round(v * 100) + '%');
+  const sum = `<ul class="stats"><li>Score: <strong>${A.total ?? 'N/A'}</strong> → <strong>${A2.total ?? 'N/A'}</strong> (heuristic)</li><li>Weighted keyword coverage: <strong>${pct(A.coverage)}</strong> → <strong>${pct(A2.coverage)}</strong></li><li>Relevant keywords covered: <strong>${A.coveredCount}</strong> → <strong>${A2.coveredCount}</strong> of ${A.considered.length}</li>${newly.length ? `<li>Newly covered: ${newly.map(esc).join(', ')}</li>` : ''}</ul>`;
+  const longBa = `<details class="adv"><summary>${ios ? 'Description' : 'Long description'}: before and after</summary><div class="inner"><div class="ba">${col('Before', A.store, 'long', f.long, 'before').replace('ba-text"', 'ba-text long"')}${col('After', A.store, 'long', g.long, 'after').replace('ba-text"', 'ba-text long"')}</div></div></details>`;
+  return `<section class="card"><div class="res-head"><h2>Before and after</h2><span class="sum">After uses the options selected above</span></div>${sum}${pairs}${longBa}</section>`;
+}
+function anRender() {
+  const L = an.last, box = $('#an-results');
+  if (!L) { box.innerHTML = ''; return; }
+  box.innerHTML = [anScoreCard(L.A, L.A2), anFlagsCard(L.A), anTableCard(L.A), anHighlightCard(L.A), anStatsCard(L.A), anOptionsCard(L.A, L.G), anBaCard(L.A, L.G, L.A2)].join('');
+  box.hidden = L.store !== an.store;
+  $('#an-export-csv').hidden = $('#an-export-txt').hidden = box.hidden;
+}
+
+/* ----- run ----- */
+function anRun(quiet) {
+  const store = an.store, f = an.fields[store], st = $('#an-status');
+  if (![f.title, anMid(store, f), f.long].some(v => String(v || '').trim())) { st.textContent = 'Add some listing text first (fetch a listing or type it in).'; st.classList.add('err'); return; }
+  st.classList.remove('err');
+  const kwRows = anKeywordRows(store, an.country);
+  const A = anAnalyze(store, f, kwRows), G = anGenerate(store, A), A2 = anAnalyze(store, G.after, kwRows);
+  an.last = { store, country: an.country, at: new Date().toISOString(), A, G, A2 };
+  anRender(); anSave();
+  if (!quiet) st.textContent = `Analyzed ${kwRows.length} keywords. Heuristic score ${A.total ?? 'N/A'}${A2.total != null ? `, ${A2.total} with the suggested copy` : ''}.`;
+}
+
+/* ----- copy and export ----- */
+async function anCopy(text, btn) {
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e2) { /* ignore */ } ta.remove(); }
+  const old = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = old; }, 1500);
+}
+function anDownload(name, mime, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: mime })); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+const anCsv = rows => rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+function anExportCsv() {
+  const L = an.last; if (!L) return;
+  const { A, G, A2 } = L, ios = A.store === 'ios', n = v => (v == null ? 'N/A' : v);
+  const head = ['store', 'country', 'keyword', 'popularity', 'difficulty', 'opportunity', 'current_rank', 'title_match', ios ? 'subtitle_match' : 'short_description_match', ...(ios ? ['keyword_field_match'] : []), 'description_match', 'description_frequency', 'relevance', 'recommendation'];
+  const rows = [head, ...A.rows.map(r => [STORE_LABEL[A.store], L.country.toUpperCase(), r.kw, n(r.metrics && r.metrics.pop), n(r.metrics && r.metrics.difficulty), n(r.metrics && r.metrics.opp), r.rank ? (r.rank.rank == null ? 'not found' : r.rank.rank) : 'N/A', r.m.title.type, r.m.mid.type, ...(ios ? [r.m.kwf.type] : []), r.m.long.type, r.m.long.count, r.rel.level, r.rec])];
+  const f = A.f, g = G.after, lim = AN_LIMITS[A.store];
+  const fl = [['field', 'before', 'after', 'before_count', 'after_count', 'limit'], ['title', f.title, g.title, anLen(f.title), anLen(g.title), lim.title], [ios ? 'subtitle' : 'short_description', anMid(A.store, f), anMid(A.store, g), anLen(anMid(A.store, f)), anLen(anMid(A.store, g)), ios ? lim.subtitle : lim.short]];
+  if (ios) fl.push(['keyword_field_bytes', f.keywords, g.keywords, anBytes(f.keywords), anBytes(g.keywords), lim.keywords]);
+  fl.push(['description', f.long, g.long, anLen(f.long), anLen(g.long), lim.long]);
+  const sc = [['component', 'points', 'max', 'why'], ...A.parts.map(p => [p.label, n(p.pts), p.max, p.why]), ['TOTAL (heuristic, not an official store score)', n(A.total), 100, 'after suggested copy: ' + n(A2.total)]];
+  anDownload(`aso-analysis-${A.store}-${L.country}.csv`, 'text/csv', [anCsv(rows), anCsv(fl), anCsv(sc)].join('\n\n'));
+}
+function anExportTxt() {
+  const L = an.last; if (!L) return;
+  const { A, G, A2 } = L, ios = A.store === 'ios', f = A.f, g = G.after, n = v => (v == null ? 'N/A' : v);
+  const out = [`ASO LISTING ANALYSIS`, `${STORE_LABEL[A.store]}, ${CNAME[L.country]}, ${L.at.slice(0, 10)}`, '',
+    `Heuristic score (not an official store score): ${n(A.total)} / 100 (${A.band}). With suggested copy: ${n(A2.total)}`, ...A.parts.map(p => `  - ${p.label}: ${n(p.pts)} / ${p.max}. ${p.why}`), '', 'CHECKS', ...(A.flags.length ? A.flags.map(x => `  - [${x.level}] ${x.text}`) : ['  - none']), '',
+    'KEYWORDS (popularity / difficulty / opportunity / rank / title / ' + (ios ? 'subtitle / keyword field' : 'short') + ' / description / relevance)',
+    ...A.rows.map(r => `  - ${r.kw}: ${n(r.metrics && r.metrics.pop)} / ${n(r.metrics && r.metrics.difficulty)} / ${n(r.metrics && r.metrics.opp)} / ${r.rank ? (r.rank.rank == null ? 'not found' : r.rank.rank) : 'N/A'} / ${r.m.title.type} / ${r.m.mid.type}${ios ? ' / ' + r.m.kwf.type : ''} / ${r.m.long.type} / ${r.rel.level}. ${r.rec}`), '',
+    'BEFORE', `Title (${anLen(f.title)}/${AN_LIMITS[A.store].title}): ${f.title}`, `${ios ? 'Subtitle' : 'Short description'} (${anLen(anMid(A.store, f))}/${ios ? AN_LIMITS.ios.subtitle : AN_LIMITS.android.short}): ${anMid(A.store, f)}`,
+    ...(ios ? [`Keyword field (${anBytes(f.keywords)}/100 bytes): ${f.keywords}`] : []), `Description (${anLen(f.long)}/4000):`, f.long, '',
+    'AFTER (selected options)', `Title (${anLen(g.title)}/30): ${g.title}`, `${ios ? 'Subtitle' : 'Short description'} (${anLen(anMid(A.store, g))}/${ios ? 30 : 80}): ${anMid(A.store, g)}`,
+    ...(ios ? [`Keyword field (${anBytes(g.keywords)}/100 bytes): ${g.keywords}`] : []), `Description (${anLen(g.long)}/4000):`, g.long, '',
+    'ALL TITLE OPTIONS', ...G.titles.map((t, i) => `  ${i + 1}. ${t} (${anLen(t)}/30)`), `ALL ${ios ? 'SUBTITLE' : 'SHORT DESCRIPTION'} OPTIONS`, ...G.mids.map((t, i) => `  ${i + 1}. ${t} (${anLen(t)})`)];
+  anDownload(`aso-analysis-${A.store}-${L.country}.txt`, 'text/plain', out.join('\n'));
+}
+
+/* ----- wiring ----- */
+function anOnShow() {
+  if (!an.keywords.length) { const k = [...anResearchKeywords(), ...state.keywords]; if (k.length) anAddKeywords(k.slice(0, 30).join(',')); }
+  if (!an.app[an.store] && state.app[an.store]) { /* the quick button is enough; nothing is changed silently */ }
+  anMetricsNote();
+  if (an.last) anRun(true);
+}
+function initAnalyzer() {
+  const restored = anLoad();
+  $('#an-country').innerHTML = COUNTRIES.map(([c, n]) => `<option value="${c}">${esc(n)}</option>`).join('');
+  if (!localStorage.getItem(AN_KEY)) { const snap = anResearch(); an.country = snap && snap.country ? snap.country : firstCountry(); }
+  anSyncFields();
+  document.querySelectorAll('input[name="an-store"]').forEach(r => r.addEventListener('change', e => { an.store = e.target.value; anSyncFields(); anSave(); }));
+  $('#an-country').addEventListener('change', e => { an.country = e.target.value; anMetricsNote(); anSave(); if (an.last) anRun(true); });
+  for (const id of ['title', 'mid', 'kwf', 'long']) $('#an-' + id).addEventListener('input', e => { an.fields[an.store][anFieldKey(id)] = e.target.value; anUpdateCounters(); anSave(); });
+  document.querySelectorAll('[data-trim]').forEach(b => b.addEventListener('click', () => anTrim(b.dataset.trim)));
+  $('#an-src').addEventListener('input', e => { an.src[an.store] = e.target.value; anSave(); });
+  $('#an-src').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); anFetch(); } });
+  $('#an-fetch').addEventListener('click', anFetch);
+  $('#an-use-app').addEventListener('click', () => { const a = state.app[an.store]; if (a) { $('#an-src').value = a.id; an.src[an.store] = a.id; anFetch(); } });
+  const kw = $('#an-kw-input');
+  kw.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); anAddKeywords(kw.value); kw.value = ''; } });
+  kw.addEventListener('blur', () => { if (kw.value.trim()) { anAddKeywords(kw.value); kw.value = ''; } });
+  kw.addEventListener('paste', e => { const t = (e.clipboardData || window.clipboardData).getData('text'); if (/[\n,]/.test(t)) { e.preventDefault(); anAddKeywords(t); } });
+  $('#an-chips').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (!b) return; an.keywords.splice(Number(b.dataset.i), 1); anRenderChips(); anMetricsNote(); anSave(); });
+  $('#an-import-research').addEventListener('click', anImportResearch);
+  $('#an-import-rank').addEventListener('click', anImportRank);
+  $('#an-brand').addEventListener('input', e => { an.brand = e.target.value; anSave(); });
+  $('#an-avoid').addEventListener('input', e => { an.avoid = e.target.value; anSave(); });
+  $('#an-run').addEventListener('click', () => anRun(false));
+  $('#an-export-csv').addEventListener('click', anExportCsv);
+  $('#an-export-txt').addEventListener('click', anExportTxt);
+  $('#an-results').addEventListener('click', e => { const b = e.target.closest('button.copy'); if (!b) return; const src = b.dataset.copyFrom ? $(b.dataset.copyFrom) : null; anCopy(src ? src.value : b.dataset.copy, b); });
+  $('#an-results').addEventListener('change', e => {
+    const r = e.target.closest('input[type=radio]'); if (!r) return;
+    if (r.name === 'an-sel-title') { an.sel.title = Number(r.value); an.sel.mid = 0; } else if (r.name === 'an-sel-mid') an.sel.mid = Number(r.value);
+    anRun(true);
+  });
+  if (restored && an.fields[an.store] && (an.fields[an.store].title || an.fields[an.store].long)) anRun(true);
+}
+if (window.RC_TEST) window.__aso = { an, anAnalyze, anGenerate, anParse, anMatch, anKeywordRows, anTitleOptions, anMidOptions, anKeywordField, anReadability, anBytes, anLen, anRun, anHighlight, AN_LIMITS, anExportCsv, anExportTxt, anSave, anLoad, anCounterText };
 
 /* ---------- theme ---------- */
 function initTheme() {
@@ -1009,7 +1974,7 @@ function init() {
   for (const s of ['ios', 'android']) { pickers[s].render(); $('#st-' + s).addEventListener('change', e => { state.stores[s] = e.target.checked; applyStores(); saveSettings(); }); }
   $('#proxy').value = state.proxy;
   $('#proxy').addEventListener('change', e => { state.proxy = e.target.value.trim(); saveSettings(); updatePlayHint(); });
-  applyStores(); renderKeywords(); renderCountries(); initResearch();
+  applyStores(); renderKeywords(); renderCountries(); initResearch(); initAnalyzer();
 
   const kw = $('#kw-input');
   kw.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addKeywords(kw.value); kw.value = ''; } });
