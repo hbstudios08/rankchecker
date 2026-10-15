@@ -11,6 +11,11 @@
 //     GET /api/suggest?store=ios|android&q=bha&country=pk   ->   { "items": ["bhabhi card game", ...] }
 // which reads Apple's and Google Play's search autocomplete. Both are unofficial endpoints.
 //
+// The Listing Analyzer also uses:
+//     GET /api/listing?store=ios|android&id=<apple id | package>&country=us
+//         ->   { "listing": { title, subtitle, short, description, developer, icon, ... } }
+// Play: reads the public app page. App Store: iTunes lookup, plus the public app page for the subtitle.
+//
 // Settings (Worker > Settings > Variables):
 //   ALLOWED_ORIGIN  your site's origin, e.g. https://thulla.online  (default: * = any site)
 //   ACCESS_KEY      optional secret; the page asks for it once and sends it as X-Access-Key
@@ -72,6 +77,76 @@ function parsePlaySearch(html, limit) {
       id: x.id, name: x.name || "", developer: x.developer || "", icon: x.icon || "",
       installs: x.installs || "", score: x.score || 0,
     })),
+  };
+}
+
+// ---- public listing metadata (Listing Analyzer) ----
+function decodeEntities(s) {
+  return String(s)
+    .replace(/&#(\d+);/g, (m, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (m, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&");
+}
+
+function htmlToText(s) {
+  return decodeEntities(String(s || "").replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|li|ul|h\d)>/gi, "\n").replace(/<[^>]+>/g, ""))
+    .replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function parseAfDatasets(html) {
+  const dataset = {};
+  for (const block of html.match(/AF_initDataCallback[\s\S]*?<\/script/g) || []) {
+    const key = block.match(/(ds:.*?)'/);
+    const val = block.match(/data:([\s\S]*?), sideChannel: \{\}\}\);<\//);
+    if (key && val) {
+      try { dataset[key[1]] = JSON.parse(val[1]); } catch (e) { /* skip unparsable block */ }
+    }
+  }
+  return dataset;
+}
+
+// Same paths google-play-scraper uses for app(): title, summary (the 80-character short description) and description.
+function parsePlayDetails(html) {
+  const s = at(parseAfDatasets(html)["ds:5"], [1, 2]);
+  if (!Array.isArray(s)) return null;
+  const desc = at(s, [12, 0, 0, 1]) || at(s, [72, 0, 1]);
+  return {
+    title: at(s, [0, 0]) || "", short: htmlToText(at(s, [73, 0, 1])), description: htmlToText(desc),
+    developer: at(s, [68, 0]) || "", icon: at(s, [95, 0, 3, 2]) || "",
+    installs: at(s, [13, 0]) || "", score: at(s, [51, 0, 1]) || 0,
+  };
+}
+
+function parseAppleSubtitle(html) {
+  const m = html.match(/<h2[^>]*class="[^"]*subtitle[^"]*"[^>]*>\s*([\s\S]*?)\s*<\/h2>/i);
+  return m ? decodeEntities(m[1].replace(/<[^>]+>/g, "")).trim() || null : null;
+}
+
+async function playListing(id, country) {
+  const res = await fetch(`https://play.google.com/store/apps/details?id=${encodeURIComponent(id)}&hl=en&gl=${country}`,
+    { headers: { "User-Agent": UA, "Accept-Language": "en", "Cookie": "CONSENT=YES+" } });
+  if (res.url && res.url.includes("consent.google.")) throw new Error("Google Play asked for cookie consent from the proxy's location");
+  if (res.status === 404) throw new Error("App not found on Google Play");
+  if (!res.ok) throw new Error(`Google Play returned HTTP ${res.status}`);
+  const d = parsePlayDetails(await res.text());
+  if (!d) throw new Error("Could not read the Google Play listing (page format may have changed)");
+  return d;
+}
+
+async function appleListing(id, country) {
+  const lk = await fetch(`https://itunes.apple.com/lookup?id=${id}&country=${country}`, { headers: { "User-Agent": UA } });
+  if (!lk.ok) throw new Error(`App Store lookup returned HTTP ${lk.status}`);
+  const r = ((await lk.json()).results || [])[0];
+  if (!r) throw new Error("App not found in that country's App Store");
+  let subtitle = null; // not in the lookup API, so read it from the public app page when possible
+  try {
+    const pg = await fetch(`https://apps.apple.com/${country}/app/id${id}`, { headers: { "User-Agent": UA, "Accept-Language": "en" } });
+    if (pg.ok) subtitle = parseAppleSubtitle(await pg.text());
+  } catch (e) { /* subtitle stays null; the page lets the user type it */ }
+  return {
+    title: r.trackName || "", subtitle, description: r.description || "", developer: r.sellerName || "",
+    icon: r.artworkUrl100 || "", ratings: r.userRatingCount || 0, rating: r.averageUserRating || 0,
   };
 }
 
@@ -159,6 +234,20 @@ export default {
         return json({ items: await suggest(store, sq, sc) });
       } catch (e) {
         return json({ error: e.message || "Suggestions failed" }, 502);
+      }
+    }
+    if (url.pathname === "/api/listing") {
+      const ls = url.searchParams.get("store");
+      const lid = (url.searchParams.get("id") || "").trim();
+      const lc = (url.searchParams.get("country") || "us").toLowerCase();
+      if (ls !== "ios" && ls !== "android") return json({ error: "store must be ios or android" }, 400);
+      if (!/^[a-z]{2}$/.test(lc)) return json({ error: "invalid country" }, 400);
+      if (ls === "ios" && !/^\d{4,15}$/.test(lid)) return json({ error: "App Store app ID must be numeric" }, 400);
+      if (ls === "android" && !/^[A-Za-z]\w*(\.[A-Za-z_]\w*)+$/.test(lid)) return json({ error: "invalid Google Play package name" }, 400);
+      try {
+        return json({ listing: ls === "ios" ? await appleListing(lid, lc) : await playListing(lid, lc) });
+      } catch (e) {
+        return json({ error: e.message || "Listing lookup failed" }, 502);
       }
     }
     if (url.pathname !== "/api/search") return json({ error: "Not found" }, 404);
