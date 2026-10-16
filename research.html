@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff">
+<title>Keyword research · Rank Checker</title>
+<script>
+/* Apply a saved theme before first paint so the page never flashes the wrong colours. */
+try { var t = localStorage.getItem('rc_theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-page="research">
+<header class="bar"><div class="wrap bar-in">
+  <div class="brand">Rank Checker</div>
+  <nav class="tabs" aria-label="Tools">
+    <a class="tab" href="index.html" id="tabbtn-rank">Rank check</a>
+    <a class="tab" href="research.html" id="tabbtn-research" aria-current="page">Keyword research</a>
+    <a class="tab" href="analyzer.html" id="tabbtn-analyzer">ASO Listing Analyzer</a>
+  </nav>
+  <button type="button" id="theme" class="icon-btn" data-mode="auto" aria-label="Theme: automatic. Click to change." title="Theme: automatic">
+    <svg class="i i-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>
+    <svg class="i i-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+    <svg class="i i-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.2A8.3 8.3 0 1 1 9.8 4a6.6 6.6 0 0 0 10.2 10.2z"/></svg>
+  </button>
+</div></header>
+
+<main class="wrap">
+  <section class="block" id="auth" hidden>
+    <div class="lead"><h2>Access key</h2><p>Your proxy or server asked for one.</p></div>
+    <div class="body"><div class="row">
+      <div><label for="key">Access key</label><input type="password" id="key" autocomplete="off"></div>
+      <div style="align-self:end"><button class="btn" id="key-save" type="button">Save key</button></div>
+    </div></div>
+  </section>
+
+  <div id="tab-research">
+    <section class="block">
+      <div class="lead"><h2>Seed keywords</h2><p>Start with a few. Up to 15.</p></div>
+      <div class="body">
+        <div class="chips" id="rs-chips"></div>
+        <label for="rs-input" class="sr">Add keywords</label>
+        <input type="text" id="rs-input" placeholder="Type a keyword and press Enter" autocomplete="off">
+        <p class="hint">Paste a list to add several. <button type="button" class="link" id="rs-copy">Use my rank-check keywords</button></p>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="lead"><h2>Options</h2><p>Where to research.</p></div>
+      <div class="body">
+        <div class="toggles" role="group" aria-label="Research options">
+          <label class="toggle"><input type="checkbox" id="rs-ios" checked> App Store</label>
+          <label class="toggle"><input type="checkbox" id="rs-android" checked> Google Play</label>
+          <label class="toggle"><input type="checkbox" id="rs-expand" checked> Include suggested keywords</label>
+        </div>
+        <div class="row" style="margin-top:18px"><div><label for="rs-country">Country</label><select id="rs-country"></select></div></div>
+        <p class="note" id="rs-note" hidden>Popularity estimates use the stores' autocomplete, and Google Play needs search results. Both come through the proxy: add its address under Options on the Rank check page. App Store difficulty works without it.</p>
+      </div>
+    </section>
+
+    <details class="adv">
+      <summary>Real Apple popularity scores</summary>
+      <div class="inner">
+        <p class="hint" style="margin-top:0">If you have Apple's search popularity scores (5 to 100) for this country, from Apple Ads or an ASO tool, paste them as <em>keyword, score</em> lines. They replace the estimate for App Store keywords.</p>
+        <label for="rs-apple" class="sr">Apple popularity scores</label>
+        <textarea id="rs-apple" rows="5" placeholder="bhabhi card game, 42&#10;thulla, 18" style="margin-top:12px"></textarea>
+        <div class="runbar" style="margin-top:10px"><button class="btn secondary" id="rs-apple-save" type="button">Save scores</button><span class="hint" id="rs-apple-msg" style="margin:0"></span></div>
+      </div>
+    </details>
+
+    <div class="actions">
+      <div class="runbar">
+        <button class="btn" id="rs-run" type="button">Research keywords</button>
+        <button class="btn secondary" id="rs-stop" type="button" hidden>Stop</button>
+        <button class="btn secondary" id="rs-export" type="button" hidden>Export CSV</button>
+        <progress id="rs-bar" max="100" value="0" hidden></progress>
+      </div>
+      <div class="status" id="rs-status" role="status" aria-live="polite"></div>
+    </div>
+
+    <section class="card" id="rs-results" hidden>
+      <div class="scroll"><table id="rs-table"><thead></thead><tbody></tbody></table></div>
+      <ul class="legend">
+        <li><strong>Popularity</strong> (0 to 100) is an estimate based on how early the keyword shows up in the store's own search suggestions. It is not search volume, and no free public source provides real monthly volumes. Tiers: 80+ very high, 60+ high, 40+ medium, 20+ low.</li>
+        <li><strong>Difficulty</strong> (0 to 100) reflects how big the top 5 apps are (ratings on the App Store, installs on Google Play) and how many of the top 10 titles contain the keyword. Lower is easier.</li>
+        <li><strong>Opportunity</strong> is popularity &times; (100 &minus; difficulty) &divide; 100. Click a heading to sort, and use <em>+ track</em> to add a keyword to the rank checker.</li>
+        <li>Darker cells are better for you: higher ranks, higher popularity, lower difficulty.</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

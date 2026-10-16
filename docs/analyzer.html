@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff">
+<title>ASO Listing Analyzer · Rank Checker</title>
+<script>
+/* Apply a saved theme before first paint so the page never flashes the wrong colours. */
+try { var t = localStorage.getItem('rc_theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-page="analyzer">
+<header class="bar"><div class="wrap bar-in">
+  <div class="brand">Rank Checker</div>
+  <nav class="tabs" aria-label="Tools">
+    <a class="tab" href="index.html" id="tabbtn-rank">Rank check</a>
+    <a class="tab" href="research.html" id="tabbtn-research">Keyword research</a>
+    <a class="tab" href="analyzer.html" id="tabbtn-analyzer" aria-current="page">ASO Listing Analyzer</a>
+  </nav>
+  <button type="button" id="theme" class="icon-btn" data-mode="auto" aria-label="Theme: automatic. Click to change." title="Theme: automatic">
+    <svg class="i i-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>
+    <svg class="i i-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+    <svg class="i i-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.2A8.3 8.3 0 1 1 9.8 4a6.6 6.6 0 0 0 10.2 10.2z"/></svg>
+  </button>
+</div></header>
+
+<main class="wrap">
+  <section class="block" id="auth" hidden>
+    <div class="lead"><h2>Access key</h2><p>Your proxy or server asked for one.</p></div>
+    <div class="body"><div class="row">
+      <div><label for="key">Access key</label><input type="password" id="key" autocomplete="off"></div>
+      <div style="align-self:end"><button class="btn" id="key-save" type="button">Save key</button></div>
+    </div></div>
+  </section>
+
+  <div id="tab-analyzer">
+    <section class="block">
+      <div class="lead"><h2>Listing</h2><p>Choose a store, then load a public listing or type your own text.</p></div>
+      <div class="body">
+        <div class="toggles" role="radiogroup" aria-label="Store">
+          <label class="toggle"><input type="radio" name="an-store" id="an-store-android" value="android" checked> Google Play</label>
+          <label class="toggle"><input type="radio" name="an-store" id="an-store-ios" value="ios"> App Store</label>
+        </div>
+        <div class="row" style="margin-top:18px">
+          <div><label for="an-country">Country</label><select id="an-country"></select></div>
+          <div><label for="an-src">Store URL or app ID</label><input type="text" id="an-src" autocomplete="off" spellcheck="false"></div>
+        </div>
+        <div class="runbar" style="margin-top:12px">
+          <button class="btn secondary" id="an-fetch" type="button">Fetch listing</button>
+          <button class="btn secondary" id="an-use-app" type="button" hidden>Use selected app</button>
+        </div>
+        <p class="hint" id="an-fetch-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="lead"><h2>Listing text</h2><p>Edit freely. Counters follow the selected store's limits.</p></div>
+      <div class="body an-fields">
+        <div class="field-line"><label for="an-title">Title</label><span class="counter" id="an-title-count" aria-live="polite"></span><button type="button" class="link" id="an-title-trim" data-trim="title" hidden>Trim</button></div>
+        <input type="text" id="an-title" autocomplete="off">
+        <div class="field-line"><label for="an-mid" id="an-mid-label">Short description</label><span class="counter" id="an-mid-count" aria-live="polite"></span><button type="button" class="link" id="an-mid-trim" data-trim="mid" hidden>Trim</button></div>
+        <input type="text" id="an-mid" autocomplete="off">
+        <div id="an-kwf-wrap" hidden>
+          <div class="field-line"><label for="an-kwf">Keyword field</label><span class="counter" id="an-kwf-count" aria-live="polite"></span><button type="button" class="link" id="an-kwf-trim" data-trim="kwf" hidden>Trim</button></div>
+          <input type="text" id="an-kwf" autocomplete="off" spellcheck="false" placeholder="Apple hides this field. Paste it from App Store Connect, comma separated.">
+        </div>
+        <div class="field-line"><label for="an-long">Description</label><span class="counter" id="an-long-count" aria-live="polite"></span><button type="button" class="link" id="an-long-trim" data-trim="long" hidden>Trim</button></div>
+        <textarea id="an-long" rows="10"></textarea>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="lead"><h2>Keywords</h2><p>Reused from your other pages.</p></div>
+      <div class="body">
+        <div class="chips" id="an-chips"></div>
+        <label for="an-kw-input" class="sr">Add keywords</label>
+        <input type="text" id="an-kw-input" placeholder="Type a keyword and press Enter" autocomplete="off">
+        <p class="hint"><button type="button" class="link" id="an-import-research">Import from Keyword research</button> <button type="button" class="link" id="an-import-rank">Import from Rank check</button></p>
+        <p class="note" id="an-metrics-note"></p>
+        <div class="row" style="margin-top:18px">
+          <div><label for="an-brand">Brand name (kept first in titles)</label><input type="text" id="an-brand" autocomplete="off" placeholder="Detected from your title if empty"></div>
+          <div><label for="an-avoid">Terms to avoid (competitor brands, comma separated)</label><input type="text" id="an-avoid" autocomplete="off"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="actions">
+      <div class="runbar">
+        <button class="btn" id="an-run" type="button">Analyze listing</button>
+        <button class="btn secondary" id="an-export-csv" type="button" hidden>Export CSV</button>
+        <button class="btn secondary" id="an-export-txt" type="button" hidden>Export TXT</button>
+      </div>
+      <div class="status" id="an-status" role="status" aria-live="polite"></div>
+    </div>
+
+    <div id="an-results" hidden></div>
+  </div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

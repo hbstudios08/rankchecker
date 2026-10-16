@@ -243,6 +243,15 @@ def index():
     return send_from_directory(d, "index.html")
 
 
+@app.get("/<name>")
+def ui_file(name):
+    """The other pages and shared files (research.html, analyzer.html, app.css, app.js)."""
+    d = find_ui_dir()
+    if not d or not re.match(r"^[\w-]+\.(html|css|js)$", name) or not os.path.isfile(os.path.join(d, name)):
+        return ("Not found", 404, {"Content-Type": "text/plain; charset=utf-8"})
+    return send_from_directory(d, name)
+
+
 @app.get("/health")
 def health():
     return jsonify(ok=True, ui_found=bool(find_ui_dir()))
