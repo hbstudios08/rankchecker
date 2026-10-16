@@ -132,6 +132,24 @@ function setStatus(msg, isErr) { const s = $('#status'); if (!s) return; s.textC
 const firstCountry = () => COUNTRIES.map(c => c[0]).find(c => state.countries.has(c)) || 'us';
 const pickers = {};
 
+const isStoreLink = t => /^(https?|market):\/\//i.test(String(t).trim()) || /(apps|itunes)\.apple\.com|play\.google\.com/i.test(String(t));
+const LOADING_HTML = '<div class="loading"><span class="spinner" aria-hidden="true"></span> Looking up the app…</div>';
+
+// Looks up exactly one app by its ID, for the picker.
+async function lookupApp(store, id, country) {
+  if (store === 'ios') {
+    const data = await throttled('ios', () => jsonp(`https://itunes.apple.com/lookup?id=${id}&country=${country}`));
+    const r = (data.results || [])[0];
+    if (!r) throw new Error("not found in that country's App Store");
+    return { id: String(r.trackId || id), name: r.trackName || id, developer: r.sellerName || '', icon: r.artworkUrl100 || '' };
+  }
+  const base = state.proxy.trim().replace(/\/+$/, '');
+  if (!base) throw new Error('Google Play lookups need the proxy');
+  const r = await throttled('android', () => api(`${base}/api/listing?store=android&id=${encodeURIComponent(id)}&country=${country}`));
+  const l = r.listing || {};
+  return { id, name: l.title || id, developer: l.developer || '', icon: l.icon || '' };
+}
+
 function setupPicker(store) {
   const root = $('#app-' + store), input = $('input', root), list = $('.suggest', root), sel = $('.selected', root), field = $('.field', root);
   let timer = 0;
@@ -151,21 +169,48 @@ function setupPicker(store) {
   }
   pickers[store] = { render };
 
-  input.addEventListener('input', () => {
+  const manualOpt = id => `<button type="button" class="opt" data-id="${esc(id)}" data-name="${esc(id)}" data-dev="" data-icon=""><span><strong>Use ${store === 'ios' ? 'Apple ID' : 'package'} ${esc(id)}</strong></span></button>`;
+
+  // An app ID or package name (or a pasted store link, trimmed to one): look up that single app and show only it.
+  async function showOne(id, cc) {
+    list.innerHTML = LOADING_HTML;
+    try {
+      const app = await lookupApp(store, id, cc);
+      if (input.value.trim() === id) list.innerHTML = optHtml(app);
+    } catch (e) {
+      if (input.value.trim() === id) list.innerHTML = manualOpt(id) + `<p class="hint">Could not look up the app (${esc(e.message)}). You can still use the ${store === 'ios' ? 'ID' : 'package name'}.</p>`;
+    }
+  }
+  function resolveLink() {
+    const p = anParseSource(input.value, store);
+    if (p.store && p.store !== store) { list.innerHTML = `<p class="hint">That is ${p.store === 'ios' ? 'an' : 'a'} ${STORE_LABEL[p.store]} link. Paste it in the ${STORE_LABEL[p.store]} box instead.</p>`; return; }
+    if (!p.id) { list.innerHTML = '<p class="hint">Could not find an app ID in that link.</p>'; return; }
+    input.value = p.id; // trim the link down to the app ID or package name
+    showOne(p.id, p.country || firstCountry());
+  }
+
+  input.addEventListener('input', e => {
     clearTimeout(timer);
     const q = input.value.trim();
     list.innerHTML = '';
     if (q.length < 2) return;
+    const typed = /^(insertText|delete)/.test((e && e.inputType) || '');
+    if (isStoreLink(q)) { if (!typed) resolveLink(); return; } // typed links are handled on "change"
     const isId = store === 'ios' ? /^\d{4,15}$/.test(q) : /^[A-Za-z]\w*(\.[A-Za-z_]\w*)+$/.test(q);
-    const manual = isId ? `<button type="button" class="opt" data-id="${esc(q)}" data-name="${esc(q)}" data-dev="" data-icon=""><span><strong>Use ${store === 'ios' ? 'Apple ID' : 'package'} ${esc(q)}</strong></span></button>` : '';
-    list.innerHTML = manual;
+    if (isId) { timer = setTimeout(() => showOne(q, firstCountry()), 350); return; }
     timer = setTimeout(async () => {
       try {
         const items = await searchStore(store, q, firstCountry(), 8);
         if (input.value.trim() !== q) return;
-        list.innerHTML = manual + items.map(optHtml).join('') || '<p class="hint">No apps found.</p>';
-      } catch (e) { if (input.value.trim() === q) list.innerHTML = manual + `<p class="hint">${esc(e.message)}</p>`; }
+        list.innerHTML = items.map(optHtml).join('') || '<p class="hint">No apps found.</p>';
+      } catch (e2) { if (input.value.trim() === q) list.innerHTML = `<p class="hint">${esc(e2.message)}</p>`; }
     }, 350);
+  });
+  input.addEventListener('change', () => { if (isStoreLink(input.value)) resolveLink(); });
+  input.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const opts = list.querySelectorAll('button.opt');
+    if (opts.length === 1) { e.preventDefault(); opts[0].click(); }
   });
 
   list.addEventListener('click', e => {
@@ -1199,11 +1244,11 @@ function anMetricsNote() {
 }
 
 /* ----- fetch a public listing ----- */
-function anParseSource(text) {
+function anParseSource(text, dflt) {
   const t = String(text || '').trim();
   let store = null, id = '', country = null, m;
-  if (/apps\.apple\.com|itunes\.apple\.com/i.test(t)) store = 'ios'; else if (/play\.google\.com/i.test(t)) store = 'android';
-  if ((store || an.store) === 'ios') { m = t.match(/\bid(\d{4,15})\b/) || t.match(/^(\d{4,15})$/); id = m ? m[1] : ''; const c = t.match(/apple\.com\/([a-z]{2})\//i); if (c && CNAME[c[1].toLowerCase()]) country = c[1].toLowerCase(); }
+  if (/apps\.apple\.com|itunes\.apple\.com/i.test(t)) store = 'ios'; else if (/play\.google\.com|^market:\/\//i.test(t)) store = 'android';
+  if ((store || dflt || an.store) === 'ios') { m = t.match(/\bid(\d{4,15})\b/) || t.match(/^(\d{4,15})$/); id = m ? m[1] : ''; const c = t.match(/apple\.com\/([a-z]{2})\//i); if (c && CNAME[c[1].toLowerCase()]) country = c[1].toLowerCase(); }
   else { m = t.match(/[?&]id=([A-Za-z]\w*(?:\.[A-Za-z_]\w*)+)/) || t.match(/^([A-Za-z]\w*(?:\.[A-Za-z_]\w*)+)$/); id = m ? m[1] : ''; const c = t.match(/[?&]gl=([a-z]{2})/i); if (c && CNAME[c[1].toLowerCase()]) country = c[1].toLowerCase(); }
   return { store, id, country };
 }
@@ -1214,13 +1259,22 @@ async function anLookupIos(id, country) {
   if (!r) throw new Error("App not found in that country's App Store");
   return { title: r.trackName || '', subtitle: null, description: r.description || '', developer: r.sellerName || '', icon: r.artworkUrl100 || '' };
 }
+function anHandleLink() {
+  const raw = $('#an-src').value, st = $('#an-fetch-status'), p = anParseSource(raw);
+  if (!p.id) { st.classList.add('err'); st.textContent = 'Could not find an app ID in that link.'; return; }
+  if (p.store) an.store = p.store;
+  if (p.country) an.country = p.country;
+  an.src[an.store] = p.id; // trim the link down to the app ID or package name
+  anSyncFields();
+  anFetch();
+}
 async function anFetch() {
   const st = $('#an-fetch-status'), parsed = anParseSource($('#an-src').value);
   if (parsed.store && parsed.store !== an.store) { an.store = parsed.store; }
   if (parsed.country) an.country = parsed.country;
   const store = an.store; an.src[store] = $('#an-src').value.trim();
   if (!parsed.id) { anSyncFields(); st.textContent = `Paste a ${STORE_LABEL[store]} URL or ${store === 'ios' ? 'numeric app ID' : 'package name'}.`; st.classList.add('err'); return; }
-  anSyncFields(); st.classList.remove('err'); st.textContent = 'Fetching the public listing…';
+  anSyncFields(); st.classList.remove('err'); st.innerHTML = '<span class="spinner" aria-hidden="true"></span> Fetching the public listing…';
   let L = null, err = null;
   if (anListingBase()) { try { L = (await api(`${anListingBase()}/api/listing?store=${store}&id=${encodeURIComponent(parsed.id)}&country=${an.country}`)).listing; } catch (e) { err = e; if (e.auth) { st.textContent = 'Access key required.'; return; } } }
   if (!L && store === 'ios') { try { L = await anLookupIos(parsed.id, an.country); err = null; } catch (e) { err = err || e; } }
@@ -1419,7 +1473,12 @@ function initAnalyzer() {
   $('#an-country').addEventListener('change', e => { an.country = e.target.value; anMetricsNote(); anSave(); if (an.last) anRun(true); });
   for (const id of ['title', 'mid', 'kwf', 'long']) $('#an-' + id).addEventListener('input', e => { an.fields[an.store][anFieldKey(id)] = e.target.value; anUpdateCounters(); anSave(); });
   document.querySelectorAll('[data-trim]').forEach(b => b.addEventListener('click', () => anTrim(b.dataset.trim)));
-  $('#an-src').addEventListener('input', e => { an.src[an.store] = e.target.value; anSave(); });
+  $('#an-src').addEventListener('input', e => {
+    const typed = /^(insertText|delete)/.test(e.inputType || '');
+    if (isStoreLink(e.target.value) && !typed) { anHandleLink(); return; } // typed links are handled on "change"
+    an.src[an.store] = e.target.value; anSave();
+  });
+  $('#an-src').addEventListener('change', () => { if (isStoreLink($('#an-src').value)) anHandleLink(); });
   $('#an-src').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); anFetch(); } });
   $('#an-fetch').addEventListener('click', anFetch);
   $('#an-use-app').addEventListener('click', () => { const a = state.app[an.store]; if (a) { $('#an-src').value = a.id; an.src[an.store] = a.id; anFetch(); } });
